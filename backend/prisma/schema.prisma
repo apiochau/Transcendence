@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum GameStatus {
+  WAITING
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum TournamentStatus {
+  DRAFT
+  OPEN
+  ACTIVE
+  FINISHED
+}
+
+model User {
+  id                String            @id @default(uuid())
+  email             String            @unique
+  username          String            @unique
+  passwordHash      String
+  displayName       String?
+  avatarUrl         String?
+  oauthProvider     String?
+  oauthId           String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  sentFriends       Friendship[]      @relation("FriendRequester")
+  receivedFriends   Friendship[]      @relation("FriendAddressee")
+  gamesAsPlayerOne  Game[]            @relation("PlayerOneGames")
+  gamesAsPlayerTwo  Game[]            @relation("PlayerTwoGames")
+  wins              Game[]            @relation("WinnerGames")
+  stats             UserStats?
+  notifications     Notification[]
+  tournamentEntries TournamentEntry[]
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  addresseeId String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  requester   User             @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee   User             @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+}
+
+model Game {
+  id          String     @id @default(uuid())
+  roomId      String     @unique
+  status      GameStatus @default(WAITING)
+  playerOneId String
+  playerTwoId String?
+  winnerId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  playerOne   User       @relation("PlayerOneGames", fields: [playerOneId], references: [id])
+  playerTwo   User?      @relation("PlayerTwoGames", fields: [playerTwoId], references: [id])
+  winner      User?      @relation("WinnerGames", fields: [winnerId], references: [id])
+}
+
+model UserStats {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  gamesPlayed Int      @default(0)
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  rating      Int      @default(1000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Tournament {
+  id        String            @id @default(uuid())
+  name      String
+  status    TournamentStatus  @default(DRAFT)
+  startsAt  DateTime?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  entries   TournamentEntry[]
+}
+
+model TournamentEntry {
+  id           String     @id @default(uuid())
+  tournamentId String
+  userId       String
+  seed         Int?
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: transcendence-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: transcendence
+      POSTGRES_USER: transcendence
+      POSTGRES_PASSWORD: transcendence
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transcendence -d transcendence"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: transcendence-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.example
+    environment:
+      DATABASE_URL: postgresql://transcendence:transcendence@postgres:5432/transcendence?schema=public
+      JWT_SECRET: change-me-in-production
+      CORS_ORIGIN: http://localhost
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: transcendence-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: transcendence-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres-data:
