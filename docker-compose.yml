@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: docker.io/library/postgres:16-alpine
     container_name: transcendence-postgres
     restart: unless-stopped
     environment:
@@ -11,6 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    networks:
+      - transcendence
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U transcendence -d transcendence"]
       interval: 10s
@@ -27,12 +29,13 @@ services:
     environment:
       DATABASE_URL: postgresql://transcendence:transcendence@postgres:5432/transcendence?schema=public
       JWT_SECRET: change-me-in-production
-      CORS_ORIGIN: http://localhost
+      CORS_ORIGIN: http://localhost:8080
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     expose:
       - "3000"
+    networks:
+      - transcendence
 
   frontend:
     build:
@@ -43,18 +46,26 @@ services:
       - backend
     expose:
       - "80"
+    networks:
+      - transcendence
 
   nginx:
-    image: nginx:1.27-alpine
+    image: docker.io/library/nginx:1.27-alpine
     container_name: transcendence-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - frontend
       - backend
+    networks:
+      - transcendence
+
+networks:
+  transcendence:
+    driver: bridge
 
 volumes:
   postgres-data:

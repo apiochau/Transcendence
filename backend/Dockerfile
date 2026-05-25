@@ -1,7 +1,9 @@
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
-RUN apk add --no-cache python3 make g++
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
 RUN npm install
@@ -13,11 +15,13 @@ COPY nest-cli.json tsconfig*.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+FROM node:22-bookworm-slim AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache python3 make g++
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
 RUN npm install --omit=dev
@@ -30,4 +34,4 @@ COPY .env.example ./.env.example
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma db push && node dist/main.js"]
+CMD ["sh", "-c", "until npx prisma db push; do echo 'waiting for postgres or prisma engine'; sleep 2; done; node dist/main.js"]

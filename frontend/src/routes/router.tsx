@@ -9,6 +9,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MatchmakingPage } from '../pages/MatchmakingPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { SoloGamePage } from '../pages/SoloGamePage';
 import { TournamentsPage } from '../pages/TournamentsPage';
 
 export const router = createBrowserRouter([
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/matchmaking', element: <MatchmakingPage /> },
+          { path: '/solo', element: <SoloGamePage /> },
           { path: '/game/:roomId', element: <LiveGamePage /> },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/leaderboard', element: <LeaderboardPage /> },

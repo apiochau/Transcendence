@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/auth.store';
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/matchmaking', label: 'Matchmaking' },
+  { to: '/solo', label: 'Partie solo' },
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/tournaments', label: 'Tournaments' },
   { to: '/profile', label: 'Profile' },

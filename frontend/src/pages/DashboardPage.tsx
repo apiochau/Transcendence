@@ -13,6 +13,10 @@ export function DashboardPage() {
           <h2 className="font-semibold">Find Match</h2>
           <p className="mt-2 text-sm text-slate-600">Join the real-time queue.</p>
         </Link>
+        <Link to="/solo" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm hover:border-accent">
+          <h2 className="font-semibold">Partie solo</h2>
+          <p className="mt-2 text-sm text-slate-600">Tester le quiz en local.</p>
+        </Link>
         <Link to="/leaderboard" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm hover:border-accent">
           <h2 className="font-semibold">Leaderboard</h2>
           <p className="mt-2 text-sm text-slate-600">Track ranking and wins.</p>
