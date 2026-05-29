@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Socket } from 'socket.io-client';
 import { createSocket } from '../api/socket';
+import { useAuthStore } from '../store/auth.store';
 
 interface GameEvent {
   event: string;
@@ -32,8 +33,17 @@ interface AnswerState {
   players: number;
 }
 
+interface GameFinishedPayload {
+  winnerUserId: string | null;
+  scores: Array<{
+    userId: string;
+    score: number;
+  }>;
+}
+
 export function LiveGamePage() {
   const { roomId = 'lobby' } = useParams();
+  const user = useAuthStore((state) => state.user);
   const socketRef = useRef<Socket | null>(null);
   const selectedIndexRef = useRef<number | null>(null);
   const [connected, setConnected] = useState(false);
@@ -47,6 +57,7 @@ export function LiveGamePage() {
   const [answerState, setAnswerState] = useState<AnswerState | null>(null);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [winnerUserId, setWinnerUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = createSocket();
@@ -89,6 +100,7 @@ export function LiveGamePage() {
 
     function onGameStarted(payload: { totalQuestions: number }) {
       setFinished(false);
+      setWinnerUserId(null);
       setCorrectIndex(null);
       setSelectedIndex(null);
       setAnswerState(null);
@@ -120,8 +132,9 @@ export function LiveGamePage() {
       });
     }
 
-    function onGameFinished() {
+    function onGameFinished(payload: GameFinishedPayload) {
       setFinished(true);
+      setWinnerUserId(payload.winnerUserId);
       setQuestion(null);
       setReadySent(false);
       setReadyState((currentReadyState) => ({ ...currentReadyState, started: false }));
@@ -171,6 +184,7 @@ export function LiveGamePage() {
     socket.emit('game:signal', { roomId, event: 'player:ready', data: { at: new Date().toISOString() } });
     setReadySent(true);
     setFinished(false);
+    setWinnerUserId(null);
     setScore(0);
     setEvents((currentEvents) => ['Pret envoye a l adversaire.', ...currentEvents].slice(0, 8));
   }
@@ -267,6 +281,12 @@ export function LiveGamePage() {
             <div className="mt-8 rounded-lg border border-slate-200 p-5">
               <p className="text-sm font-semibold text-slate-500">Resultat</p>
               <p className="mt-2 text-3xl font-bold">{score} points</p>
+              {winnerUserId && (
+                <p className={winnerUserId === user?.id ? 'mt-2 font-semibold text-green-700' : 'mt-2 font-semibold text-slate-600'}>
+                  {winnerUserId === user?.id ? 'Victoire ajoutee au leaderboard.' : 'Defaite enregistree.'}
+                </p>
+              )}
+              {!winnerUserId && <p className="mt-2 font-semibold text-slate-600">Egalite.</p>}
               <button
                 type="button"
                 onClick={sendReadySignal}
