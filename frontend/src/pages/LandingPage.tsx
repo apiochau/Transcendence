@@ -12,7 +12,7 @@ export function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/register" className="motion-button rounded-md bg-accent px-5 py-3 text-sm font-semibold text-white hover:bg-teal-800">Create account</Link>
-            <Link to="/login" className="motion-button rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold hover:bg-slate-50">Sign in</Link>
+            <Link to="/login" className="motion-button ghost-button rounded-md border border-slate-300 px-5 py-3 text-sm font-semibold">Sign in</Link>
           </div>
         </div>
         <div className="card-surface grid gap-3 p-5">

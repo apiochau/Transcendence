@@ -65,6 +65,6 @@ export class SimilarityService {
 
   private cosineToPercentage(cosineSimilarity: number): number {
     const boundedSimilarity = Math.min(1, Math.max(0, cosineSimilarity));
-    return Math.min(90, Math.round(boundedSimilarity * 100));
+    return Math.min(99, Math.round(boundedSimilarity ** 0.85 * 99));
   }
 }

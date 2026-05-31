@@ -58,6 +58,13 @@ textarea::placeholder {
   background-color: #1f2937;
 }
 
+.bg-amber-50,
+.bg-green-50,
+.bg-red-50,
+.bg-teal-50 {
+  background-color: #263244;
+}
+
 .border-slate-100,
 .border-slate-200,
 .border-slate-300 {
@@ -77,13 +84,23 @@ textarea::placeholder {
   color: #cbd5e1;
 }
 
+.text-amber-900,
+.text-green-700,
+.text-green-800,
+.text-red-700,
+.text-red-800,
+.text-teal-900 {
+  color: #e5e7eb;
+}
+
 .shadow-sm {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
 }
 
 .hover\:bg-slate-50:hover,
 .hover\:bg-slate-100:hover {
-  background-color: #273449;
+  background-color: #273449 !important;
+  color: #f8fafc !important;
 }
 
 @layer components {
@@ -112,7 +129,7 @@ textarea::placeholder {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(120deg, transparent, rgb(255 255 255 / 0.06), transparent);
+    background: linear-gradient(120deg, transparent, rgb(148 163 184 / 0.08), transparent);
     opacity: 0;
     transform: translateX(-45%);
     transition: opacity 220ms ease, transform 620ms ease;
@@ -175,7 +192,7 @@ textarea::placeholder {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(120deg, transparent, rgb(255 255 255 / 0.18), transparent);
+    background: linear-gradient(120deg, transparent, rgb(45 212 191 / 0.16), transparent);
     opacity: 0;
     transform: translateX(-100%);
   }
@@ -197,6 +214,27 @@ textarea::placeholder {
   .interactive-card:focus-visible {
     outline: none;
     box-shadow: 0 0 0 4px rgb(20 184 166 / 0.18), 0 12px 28px rgb(0 0 0 / 0.22);
+  }
+
+  .ghost-button {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+  }
+
+  .ghost-button:hover:not(:disabled) {
+    background-color: #263244 !important;
+    color: #f8fafc !important;
+  }
+
+  .danger-button {
+    background-color: rgb(127 29 29 / 0.35) !important;
+    border-color: rgb(248 113 113 / 0.55) !important;
+    color: #fecaca !important;
+  }
+
+  .danger-button:hover:not(:disabled) {
+    background-color: rgb(153 27 27 / 0.58) !important;
+    color: #fee2e2 !important;
   }
 
   .soft-pop {
@@ -238,6 +276,43 @@ textarea::placeholder {
     background: #14b8a6;
     box-shadow: 0 0 0 rgb(20 184 166 / 0.7);
     animation: dot-pulse 1.5s infinite;
+  }
+
+  .victory-overlay {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 35%, rgb(20 184 166 / 0.28), transparent 24rem);
+    animation: victory-fade 2.8s ease both;
+  }
+
+  .victory-banner {
+    position: absolute;
+    left: 50%;
+    top: 22%;
+    transform: translateX(-50%);
+    border-radius: 0.5rem;
+    border: 1px solid rgb(45 212 191 / 0.55);
+    background: rgb(15 23 42 / 0.92);
+    box-shadow: 0 24px 70px rgb(20 184 166 / 0.22);
+    padding: 1rem 1.4rem;
+    text-align: center;
+    animation: victory-pop 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    top: -1rem;
+    left: var(--confetti-left);
+    width: 0.55rem;
+    height: 1rem;
+    border-radius: 0.15rem;
+    background: var(--confetti-color);
+    opacity: 0;
+    transform: rotate(var(--confetti-rotate));
+    animation: confetti-fall 2.6s cubic-bezier(0.18, 0.85, 0.38, 1) var(--confetti-delay) both;
   }
 }
 
@@ -310,6 +385,47 @@ textarea::placeholder {
   }
   100% {
     box-shadow: 0 0 0 0 rgb(20 184 166 / 0);
+  }
+}
+
+@keyframes victory-fade {
+  0% {
+    opacity: 0;
+  }
+  12%,
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes victory-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px) scale(0.88);
+  }
+  70% {
+    transform: translateX(-50%) translateY(0) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(-1rem) rotate(var(--confetti-rotate));
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(110vh) translateX(var(--confetti-drift)) rotate(calc(var(--confetti-rotate) + 540deg));
   }
 }
 

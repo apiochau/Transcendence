@@ -8,6 +8,7 @@ import {
   clickSoloSuggestion,
   getSoloHistory,
   getSoloSuggestions,
+  giveUpSoloGame,
   startSoloGame,
   submitFinalAnswer,
 } from '../api/game';
@@ -26,14 +27,24 @@ const bucketClass: Record<SimilarityBucket, string> = {
   frozen: 'border-slate-500 bg-slate-900/60 text-slate-200',
 };
 
+const confettiPieces = Array.from({ length: 34 }, (_, index) => ({
+  id: index,
+  left: `${(index * 29) % 100}%`,
+  delay: `${(index % 9) * 0.08}s`,
+  drift: `${((index % 7) - 3) * 18}px`,
+  rotate: `${(index * 47) % 180}deg`,
+  color: ['#14b8a6', '#f59e0b', '#38bdf8', '#a78bfa', '#f472b6'][index % 5],
+}));
+
 export function SoloGamePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [secretWord, setSecretWord] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestedWord[]>([]);
   const [revealed, setRevealed] = useState<Record<string, RevealedSuggestion>>({});
   const [history, setHistory] = useState<SuggestionHistoryItem[]>([]);
   const [answer, setAnswer] = useState('');
   const [finalMessage, setFinalMessage] = useState<string | null>(null);
+  const [revealedSecret, setRevealedSecret] = useState<string | null>(null);
+  const [showVictory, setShowVictory] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -83,8 +94,9 @@ export function SoloGamePage() {
     clearRoundTimers();
     setError(null);
     setFinalMessage(null);
+    setRevealedSecret(null);
+    setShowVictory(false);
     setIsFinished(false);
-    setSecretWord(null);
     setHistory([]);
     setSuggestions([]);
     setRevealed({});
@@ -94,7 +106,6 @@ export function SoloGamePage() {
     try {
       const session = await startSoloGame();
       setSessionId(session.sessionId);
-      setSecretWord(session.secretWord);
       await loadSuggestions(session.sessionId);
     } catch (caughtError) {
       setError(getApiErrorMessage(caughtError, 'Impossible de lancer une partie solo.'));
@@ -171,6 +182,7 @@ export function SoloGamePage() {
         setIsFinished(true);
         setRoundCooldown(0);
         setFinalMessage('Bonne reponse.');
+        setShowVictory(true);
       } else {
         setFinalMessage('Mauvaise reponse.');
       }
@@ -178,6 +190,26 @@ export function SoloGamePage() {
       setAnswer('');
     } catch (caughtError) {
       setError(getApiErrorMessage(caughtError, 'Impossible de valider la reponse finale.'));
+    }
+  }
+
+  async function giveUp() {
+    if (!sessionId || isFinished) {
+      return;
+    }
+
+    clearRoundTimers();
+    setError(null);
+    setFinalMessage(null);
+    setRoundCooldown(0);
+
+    try {
+      const result = await giveUpSoloGame(sessionId);
+      setIsFinished(true);
+      setRevealedSecret(result.secretWord);
+      setFinalMessage('Partie abandonnee.');
+    } catch (caughtError) {
+      setError(getApiErrorMessage(caughtError, 'Impossible d abandonner la partie.'));
     }
   }
 
@@ -191,21 +223,40 @@ export function SoloGamePage() {
 
   return (
     <section className="page-enter">
+      {showVictory && (
+        <div className="victory-overlay" aria-hidden="true" onAnimationEnd={() => setShowVictory(false)}>
+          <div className="victory-banner">
+            <p className="text-sm font-semibold uppercase text-accent">Victoire</p>
+            <p className="mt-1 text-3xl font-bold">Mot trouve</p>
+          </div>
+          {confettiPieces.map((piece) => (
+            <span
+              key={piece.id}
+              className="confetti-piece"
+              style={
+                {
+                  '--confetti-left': piece.left,
+                  '--confetti-delay': piece.delay,
+                  '--confetti-drift': piece.drift,
+                  '--confetti-rotate': piece.rotate,
+                  '--confetti-color': piece.color,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Word Heist Arena</h1>
           <p className="mt-2 text-slate-600">Choisis parmi les suggestions, puis tente la reponse finale.</p>
-          {secretWord && (
-            <p className="mt-3 inline-flex rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
-              Debug secret: {secretWord}
-            </p>
-          )}
         </div>
         <button
           type="button"
           onClick={startGame}
           disabled={isStarting}
-          className="motion-button rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="motion-button ghost-button rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isStarting ? 'Creation...' : 'Nouvelle partie'}
         </button>
@@ -274,18 +325,28 @@ export function SoloGamePage() {
           </div>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={nextSuggestions}
-              disabled={!sessionId || isFinished || isLoadingSuggestions || roundCooldown > 0}
-              className="motion-button rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {roundCooldown > 0
-                ? `Auto dans ${roundCooldown}s`
-                : isLoadingSuggestions
-                  ? 'Chargement...'
-                  : 'Suggestions suivantes'}
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={nextSuggestions}
+                disabled={!sessionId || isFinished || isLoadingSuggestions || roundCooldown > 0}
+                className="motion-button ghost-button rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {roundCooldown > 0
+                  ? `Auto dans ${roundCooldown}s`
+                  : isLoadingSuggestions
+                    ? 'Chargement...'
+                    : 'Suggestions suivantes'}
+              </button>
+              <button
+                type="button"
+                onClick={giveUp}
+                disabled={!sessionId || isFinished}
+                className="motion-button danger-button rounded-md border px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Abandonner
+              </button>
+            </div>
 
             <form onSubmit={finalAnswer} className="flex flex-1 flex-col gap-3 sm:max-w-md sm:flex-row">
               <input
@@ -307,6 +368,11 @@ export function SoloGamePage() {
           </div>
 
           {finalMessage && <p className="soft-pop mt-4 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold">{finalMessage}</p>}
+          {revealedSecret && (
+            <p className="soft-pop mt-3 rounded-md border border-red-400/50 bg-red-950/30 px-3 py-2 text-sm font-semibold text-red-100">
+              Mot secret: {revealedSecret}
+            </p>
+          )}
           {error && <p className="soft-pop mt-4 rounded-md bg-red-950/50 px-3 py-2 text-sm text-red-200">{error}</p>}
         </div>
 

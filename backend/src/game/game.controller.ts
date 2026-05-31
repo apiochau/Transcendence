@@ -51,6 +51,11 @@ export class SoloGameController {
     return this.gameService.submitFinalAnswer(sessionId, finalAnswerDto.answer);
   }
 
+  @Post('solo/:sessionId/give-up')
+  giveUp(@Param('sessionId') sessionId: string) {
+    return this.gameService.giveUpSoloSession(sessionId);
+  }
+
   @Get('solo/:sessionId/history')
   history(@Param('sessionId') sessionId: string) {
     return this.gameService.getSoloHistory(sessionId);

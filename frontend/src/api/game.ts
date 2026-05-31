@@ -5,7 +5,6 @@ export type SimilarityBucket = 'hot' | 'warm' | 'cold' | 'frozen';
 export interface SoloStartResponse {
   sessionId: string;
   status: string;
-  secretWord: string;
 }
 
 export interface SuggestedWord {
@@ -26,6 +25,10 @@ export interface SuggestionHistoryItem extends RevealedSuggestion {
 
 export interface FinalAnswerResponse {
   success: boolean;
+}
+
+export interface GiveUpResponse extends FinalAnswerResponse {
+  secretWord: string;
 }
 
 export async function startSoloGame() {
@@ -51,6 +54,11 @@ export async function submitFinalAnswer(sessionId: string, answer: string) {
     `/game/solo/${encodeURIComponent(sessionId)}/final-answer`,
     { answer },
   );
+  return data;
+}
+
+export async function giveUpSoloGame(sessionId: string) {
+  const { data } = await apiClient.post<GiveUpResponse>(`/game/solo/${encodeURIComponent(sessionId)}/give-up`);
   return data;
 }
 

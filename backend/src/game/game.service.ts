@@ -49,7 +49,6 @@ export class GameService {
     return {
       sessionId: session.id,
       status: session.status,
-      secretWord: secretWord.text,
     };
   }
 
@@ -145,6 +144,34 @@ export class GameService {
     }
 
     return { success };
+  }
+
+  async giveUpSoloSession(sessionId: string) {
+    const session = await this.prisma.gameSession.findUnique({
+      where: { id: sessionId },
+      include: { secretWord: true },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Game session not found');
+    }
+
+    if (session.status === GameStatus.ACTIVE) {
+      await this.prisma.gameSession.update({
+        where: { id: session.id },
+        data: {
+          status: GameStatus.FINISHED,
+          currentWordIds: [],
+          nextSuggestionsAt: null,
+          finishedAt: new Date(),
+        },
+      });
+    }
+
+    return {
+      success: false,
+      secretWord: session.secretWord.text,
+    };
   }
 
   async getSoloHistory(sessionId: string): Promise<SuggestionHistoryItem[]> {

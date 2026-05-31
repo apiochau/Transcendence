@@ -30,6 +30,14 @@ test('exact known word returns 100', () => {
   assert.equal(score, 100);
 });
 
+test('very close but different known words can score above 90', () => {
+  const { similarityService } = createService();
+  const score = similarityService.calculateKnownSimilarity('voiture', 'automobile');
+
+  assert.ok(score > 90);
+  assert.ok(score < 100);
+});
+
 test('known local words are scored with cosine similarity', () => {
   const { similarityService } = createService();
   const score = similarityService.calculateKnownSimilarity('ecole', 'professeur');

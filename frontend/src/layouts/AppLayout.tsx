@@ -41,7 +41,7 @@ export function AppLayout() {
               logout();
               navigate('/login');
             }}
-            className="motion-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100"
+            className="motion-button ghost-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium"
           >
             {user?.username ?? 'Logout'}
           </button>
