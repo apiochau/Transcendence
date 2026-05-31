@@ -15,17 +15,17 @@ export function TournamentsPage() {
   }, []);
 
   return (
-    <section>
+    <section className="page-enter">
       <h1 className="text-3xl font-bold">Tournaments</h1>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
-        {tournaments.map((tournament) => (
-          <article key={tournament.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        {tournaments.map((tournament, index) => (
+          <article key={tournament.id} className="card-surface stagger-item p-5" style={{ animationDelay: `${index * 70}ms` }}>
             <h2 className="font-semibold">{tournament.name}</h2>
             <p className="mt-2 text-sm text-slate-600">{tournament.status}</p>
           </article>
         ))}
         {tournaments.length === 0 && (
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm text-slate-600">No tournaments yet.</div>
+          <div className="card-surface soft-pop p-5 text-slate-600">No tournaments yet.</div>
         )}
       </div>
     </section>

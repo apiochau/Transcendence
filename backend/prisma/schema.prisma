@@ -119,3 +119,44 @@ model Notification {
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model Word {
+  id                String              @id
+  text              String
+  normalizedText    String              @unique
+  rarity            Int                 @default(50)
+  value             Int                 @default(1)
+  category          String?
+  embedding         Json
+  secretSessions    GameSession[]       @relation("SecretWordSessions")
+  suggestionHistory SuggestionHistory[]
+}
+
+model GameSession {
+  id               String              @id @default(uuid())
+  secretWordId     String
+  playerId         String
+  status           String              @default("ACTIVE")
+  shownWordIds     String[]            @default([])
+  currentWordIds   String[]            @default([])
+  nextSuggestionsAt DateTime?
+  createdAt        DateTime            @default(now())
+  finishedAt       DateTime?
+  secretWord       Word                @relation("SecretWordSessions", fields: [secretWordId], references: [id])
+  suggestionHistory SuggestionHistory[]
+}
+
+model SuggestionHistory {
+  id        String      @id @default(uuid())
+  sessionId String
+  playerId  String
+  wordId    String
+  score     Int
+  bucket    String
+  createdAt DateTime    @default(now())
+  session   GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  word      Word        @relation(fields: [wordId], references: [id])
+
+  @@unique([sessionId, wordId])
+  @@index([sessionId, createdAt])
+}

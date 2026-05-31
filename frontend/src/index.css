@@ -12,7 +12,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background: #0f172a;
+  background:
+    radial-gradient(circle at top left, rgb(20 184 166 / 0.16), transparent 28rem),
+    radial-gradient(circle at 80% 0%, rgb(245 158 11 / 0.08), transparent 24rem),
+    #0f172a;
+  overflow-x: hidden;
 }
 
 a {
@@ -26,6 +30,14 @@ select {
   background: #111827;
   color: #f8fafc;
   color-scheme: dark;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  box-shadow: 0 0 0 4px rgb(20 184 166 / 0.14);
+  transform: translateY(-1px);
 }
 
 input::placeholder,
@@ -72,4 +84,242 @@ textarea::placeholder {
 .hover\:bg-slate-50:hover,
 .hover\:bg-slate-100:hover {
   background-color: #273449;
+}
+
+@layer components {
+  .page-enter {
+    animation: page-enter 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .card-surface {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid #334155;
+    background:
+      linear-gradient(145deg, rgb(17 24 39 / 0.98), rgb(15 23 42 / 0.98)),
+      #111827;
+    box-shadow: 0 14px 35px rgb(0 0 0 / 0.22);
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 220ms ease,
+      box-shadow 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .card-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, transparent, rgb(255 255 255 / 0.06), transparent);
+    opacity: 0;
+    transform: translateX(-45%);
+    transition: opacity 220ms ease, transform 620ms ease;
+  }
+
+  .card-surface:hover {
+    border-color: rgb(20 184 166 / 0.75);
+    box-shadow: 0 22px 50px rgb(0 0 0 / 0.32), 0 0 0 1px rgb(20 184 166 / 0.08);
+    transform: translateY(-3px);
+  }
+
+  .card-surface:hover::before {
+    opacity: 1;
+    transform: translateX(45%);
+  }
+
+  .panel-surface {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid #334155;
+    background:
+      linear-gradient(145deg, rgb(17 24 39 / 0.98), rgb(15 23 42 / 0.98)),
+      #111827;
+    box-shadow: 0 14px 35px rgb(0 0 0 / 0.22);
+  }
+
+  .interactive-card {
+    transition:
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      background-color 180ms ease,
+      color 180ms ease;
+  }
+
+  .interactive-card:hover:not(:disabled) {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 18px 44px rgb(0 0 0 / 0.28);
+  }
+
+  .interactive-card:active:not(:disabled) {
+    transform: translateY(-1px) scale(0.99);
+  }
+
+  .motion-button {
+    position: relative;
+    overflow: hidden;
+    transition:
+      transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 160ms ease,
+      border-color 160ms ease,
+      background-color 160ms ease,
+      color 160ms ease,
+      opacity 160ms ease;
+  }
+
+  .motion-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, transparent, rgb(255 255 255 / 0.18), transparent);
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+
+  .motion-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgb(20 184 166 / 0.18);
+  }
+
+  .motion-button:hover:not(:disabled)::after {
+    animation: sheen 720ms ease;
+  }
+
+  .motion-button:active:not(:disabled) {
+    transform: translateY(0) scale(0.97);
+  }
+
+  .motion-button:focus-visible,
+  .interactive-card:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgb(20 184 166 / 0.18), 0 12px 28px rgb(0 0 0 / 0.22);
+  }
+
+  .soft-pop {
+    animation: soft-pop 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .stagger-item {
+    animation: list-item-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .timer-ring {
+    display: grid;
+    min-width: 4.25rem;
+    min-height: 4.25rem;
+    place-items: center;
+    border-radius: 9999px;
+    background:
+      conic-gradient(from -90deg, #14b8a6 calc(var(--timer-progress) * 1%), #334155 0),
+      #0f172a;
+    box-shadow: 0 0 30px rgb(20 184 166 / 0.26);
+    animation: timer-pulse 1s ease-in-out infinite;
+  }
+
+  .timer-ring > span {
+    display: grid;
+    width: 3.25rem;
+    height: 3.25rem;
+    place-items: center;
+    border-radius: 9999px;
+    background: #111827;
+    font-weight: 800;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    background: #14b8a6;
+    box-shadow: 0 0 0 rgb(20 184 166 / 0.7);
+    animation: dot-pulse 1.5s infinite;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes list-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes soft-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(20 184 166 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgb(20 184 166 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(20 184 166 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
