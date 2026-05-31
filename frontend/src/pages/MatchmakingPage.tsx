@@ -80,19 +80,22 @@ export function MatchmakingPage() {
   }, [queued]);
 
   return (
-    <section>
+    <section className="page-enter">
       <h1 className="text-3xl font-bold">Matchmaking</h1>
       <p className="mt-2 text-slate-600">Cherche un adversaire connecte avec un autre compte.</p>
 
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="card-surface mt-8 p-6">
         <p className="text-sm font-medium text-slate-500">Etat</p>
-        <p className="mt-2 text-lg font-semibold">{message}</p>
+        <div className="mt-2 flex items-center gap-3">
+          {queued && <span className="status-dot" />}
+          <p className="text-lg font-semibold">{message}</p>
+        </div>
         {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <button
           type="button"
           onClick={toggleQueue}
           disabled={isSubmitting}
-          className="mt-6 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="motion-button mt-6 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           {queued ? 'Quitter la recherche' : isSubmitting ? 'Recherche...' : 'Chercher une partie'}
         </button>

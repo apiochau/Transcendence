@@ -30,6 +30,7 @@ COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/dist ./dist
+COPY data ./data
 COPY .env.example ./.env.example
 
 EXPOSE 3000

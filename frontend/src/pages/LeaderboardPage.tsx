@@ -20,9 +20,9 @@ export function LeaderboardPage() {
   }, []);
 
   return (
-    <section>
+    <section className="page-enter">
       <h1 className="text-3xl font-bold">Leaderboard</h1>
-      <div className="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="card-surface mt-8 overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-100 text-slate-600">
             <tr>
@@ -33,8 +33,8 @@ export function LeaderboardPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-t border-slate-100">
+            {rows.map((row, index) => (
+              <tr key={row.id} className="stagger-item border-t border-slate-100 transition hover:bg-slate-100" style={{ animationDelay: `${index * 55}ms` }}>
                 <td className="px-4 py-3 font-medium">{row.user.displayName ?? row.user.username}</td>
                 <td className="px-4 py-3">{row.rating}</td>
                 <td className="px-4 py-3">{row.wins}</td>

@@ -38,7 +38,7 @@ export function ProfilePage() {
   const avatarLetter = (profile?.displayName ?? profile?.username ?? '?')[0].toUpperCase();
 
   return (
-    <section>
+    <section className="page-enter">
       <h1 className="text-3xl font-bold">Profile</h1>
       <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         {/* Avatar */}
