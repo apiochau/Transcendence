@@ -1,17 +1,127 @@
+import { useEffect, useState } from 'react';
+import { getMyProfile, updateMyProfile, PublicProfile } from '../api/users';
 import { useAuthStore } from '../store/auth.store';
 
 export function ProfilePage() {
-  const user = useAuthStore((state) => state.user);
+  const { user, setSession, accessToken } = useAuthStore();
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getMyProfile().then(setProfile);
+  }, []);
+
+  function startEdit() {
+    setDisplayName(profile?.displayName ?? '');
+    setEditing(true);
+    setError(null);
+  }
+
+  async function save() {
+    if (!accessToken || !user) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await updateMyProfile({ displayName: displayName.trim() || undefined });
+      setProfile((prev) => prev ? { ...prev, displayName: updated.displayName } : prev);
+      setSession(accessToken, updated);
+      setEditing(false);
+    } catch {
+      setError('Erreur lors de la sauvegarde.');
+    } finally {
+      setSaving(false);
+    }
+  }
+  const avatarLetter = (profile?.displayName ?? profile?.username ?? '?')[0].toUpperCase();
 
   return (
     <section>
       <h1 className="text-3xl font-bold">Profile</h1>
       <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-500">Username</p>
-        <p className="mt-1 text-lg font-semibold">{user?.username}</p>
-        <p className="mt-4 text-sm text-slate-500">Email</p>
-        <p className="mt-1 text-lg font-semibold">{user?.email}</p>
+        {/* Avatar */}
+        <div className="flex items-center gap-5">
+          {profile?.avatarUrl ? (
+            <img
+              src={profile.avatarUrl}
+              alt="avatar"
+              className="h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
+              {avatarLetter}
+            </div>
+          )}
+          <div>
+            <p className="text-xl font-bold">{profile?.displayName ?? profile?.username}</p>
+            <p className="text-sm text-slate-500">@{profile?.username}</p>
+            <p className="text-sm text-slate-500">{profile?.email ?? user?.email}</p>
+
+          </div>
+        </div>
+
+        {/* Stats */}
+        {profile?.stats && (
+          <div className="mt-6 grid grid-cols-3 gap-4 rounded-lg bg-slate-50 p-4 text-center">
+            <div>
+              <p className="text-2xl font-bold">{profile.stats.wins}</p>
+              <p className="text-xs text-slate-500">Victoires</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{profile.stats.losses}</p>
+              <p className="text-xs text-slate-500">Défaites</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{profile.stats.rating}</p>
+              <p className="text-xs text-slate-500">Rating</p>
+            </div>
+          </div>
+        )}
+
+        {/* Edit */}
+        {!editing ? (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="mt-6 rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800"
+            >
+              Modifier le profil
+            </button>
+        ) : (
+          <div className="mt-6 flex flex-col gap-3">
+            <label className="text-sm font-medium text-slate-600">
+              Nom affiché
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                maxLength={40}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                />
+            </label>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={save}
+                disabled={saving}
+                className="rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
+                >
+                  {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="rounded-md border border-slate-300 px-5 py-2 font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Annuler
+                  </button>
+            </div>
+          </div>
+        )}
       </div>
-    </section>
+      </section>
   );
 }
