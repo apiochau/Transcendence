@@ -40,7 +40,7 @@ export function ProfilePage() {
   return (
     <section className="page-enter">
       <h1 className="text-3xl font-bold">Profile</h1>
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="card-surface mt-8 p-6">
         {/* Avatar */}
         <div className="flex items-center gap-5">
           {profile?.avatarUrl ? (
@@ -62,7 +62,6 @@ export function ProfilePage() {
           </div>
         </div>
 
-        {/* Stats */}
         {profile?.stats && (
           <div className="mt-6 grid grid-cols-3 gap-4 rounded-lg bg-slate-50 p-4 text-center">
             <div>
@@ -80,12 +79,11 @@ export function ProfilePage() {
           </div>
         )}
 
-        {/* Edit */}
         {!editing ? (
           <button
             type="button"
             onClick={startEdit}
-            className="mt-6 rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800"
+            className="motion-button mt-6 rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800"
             >
               Modifier le profil
             </button>
@@ -106,8 +104,8 @@ export function ProfilePage() {
               <button
                 type="button"
                 onClick={save}
-                disabled={saving}
-                className="rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
+                disabled={saving || displayName.trim() === ''}
+                className="motion-button rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
                 >
                   {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                 </button>
