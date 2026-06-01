@@ -70,12 +70,6 @@ Then open:
 http://localhost:8080
 ```
 
-Solo mode is available at:
-
-```text
-http://localhost:8080/solo
-```
-
 ## Solo Gameplay
 
 - The backend picks a secret word from the local word database.
@@ -101,3 +95,6 @@ npm run build:embeddings -- --fasttext /path/to/cc.fr.300.vec --wordlist /path/t
 ```
 
 The game does not call external embedding APIs during gameplay.
+
+
+test
