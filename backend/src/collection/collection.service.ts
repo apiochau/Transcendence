@@ -35,9 +35,145 @@ export class CollectionService {
     });
   }
 
+  async createStakeLock(userId: string, collectionItemId: string) {
+    return this.prisma.$transaction(async (transaction) => {
+      const item = await transaction.wordCollectionItem.findFirst({
+        where: {
+          id: collectionItemId,
+          userId,
+          quantity: { gt: 0 },
+        },
+        include: { word: true },
+      });
+
+      if (!item) {
+        throw new Error('Collection word is not available to stake');
+      }
+
+      if (item.quantity === 1) {
+        await transaction.wordCollectionItem.delete({ where: { id: item.id } });
+      } else {
+        await transaction.wordCollectionItem.update({
+          where: { id: item.id },
+          data: { quantity: { decrement: 1 } },
+        });
+      }
+
+      return transaction.wordStakeLock.create({
+        data: {
+          userId,
+          wordId: item.wordId,
+          rarity: item.word.rarityLabel,
+        },
+        include: { word: true },
+      });
+    });
+  }
+
+  async assignStakeToRoom(stakeLockId: string, roomId: string) {
+    return this.prisma.wordStakeLock.update({
+      where: { id: stakeLockId },
+      data: {
+        roomId,
+        status: 'MATCHED',
+      },
+      include: { word: true },
+    });
+  }
+
+  async refundStake(stakeLockId: string) {
+    const stakeLock = await this.prisma.wordStakeLock.findUnique({ where: { id: stakeLockId } });
+    if (!stakeLock || stakeLock.status === 'REFUNDED' || stakeLock.status === 'WON' || stakeLock.status === 'LOST') {
+      return;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.wordCollectionItem.upsert({
+        where: {
+          userId_wordId: {
+            userId: stakeLock.userId,
+            wordId: stakeLock.wordId,
+          },
+        },
+        update: {
+          quantity: { increment: 1 },
+          lastWonAt: new Date(),
+        },
+        create: {
+          userId: stakeLock.userId,
+          wordId: stakeLock.wordId,
+        },
+      }),
+      this.prisma.wordStakeLock.update({
+        where: { id: stakeLock.id },
+        data: {
+          status: 'REFUNDED',
+          settledAt: new Date(),
+        },
+      }),
+    ]);
+  }
+
+  async settleDuelStakes(winnerUserId: string, stakeLockIds: string[]) {
+    const stakeLocks = await this.prisma.wordStakeLock.findMany({
+      where: {
+        id: { in: stakeLockIds },
+        status: { in: ['MATCHED', 'QUEUED'] },
+      },
+    });
+
+    await this.prisma.$transaction(async (transaction) => {
+      for (const stakeLock of stakeLocks) {
+        if (stakeLock.userId === winnerUserId) {
+          await transaction.wordCollectionItem.upsert({
+            where: {
+              userId_wordId: {
+                userId: winnerUserId,
+                wordId: stakeLock.wordId,
+              },
+            },
+            update: {
+              quantity: { increment: 1 },
+              lastWonAt: new Date(),
+            },
+            create: {
+              userId: winnerUserId,
+              wordId: stakeLock.wordId,
+            },
+          });
+        } else {
+          await transaction.wordCollectionItem.upsert({
+            where: {
+              userId_wordId: {
+                userId: winnerUserId,
+                wordId: stakeLock.wordId,
+              },
+            },
+            update: {
+              quantity: { increment: 1 },
+              lastWonAt: new Date(),
+            },
+            create: {
+              userId: winnerUserId,
+              wordId: stakeLock.wordId,
+            },
+          });
+        }
+
+        await transaction.wordStakeLock.update({
+          where: { id: stakeLock.id },
+          data: {
+            status: stakeLock.userId === winnerUserId ? 'WON' : 'LOST',
+            settledAt: new Date(),
+          },
+        });
+      }
+    });
+  }
+
   async getCollection(userId: string) {
     const items = await this.prisma.wordCollectionItem.findMany({
-      where: { userId },
+      where: { userId, quantity: { gt: 0 } },
       include: { word: true },
     });
 

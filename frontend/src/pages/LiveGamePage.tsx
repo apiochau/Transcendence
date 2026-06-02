@@ -51,7 +51,9 @@ interface FinishedPlayerStats {
 interface GameFinishedPayload {
   winnerUserId: string;
   loserUserId: string | null;
+  mode: 'training' | 'daily' | 'duel';
   secretWord: string;
+  collectionRewardWord: string | null;
   durationSeconds: number;
   players: FinishedPlayerStats[];
 }
@@ -278,7 +280,7 @@ export function LiveGamePage() {
       setWinnerUserId(payload.winnerUserId);
       setSecretWord(payload.secretWord);
       setFinishedStats(payload);
-      setShowCollectionReward(payload.winnerUserId === user?.id);
+      setShowCollectionReward(Boolean(payload.collectionRewardWord));
       setReadySent(false);
       setSuggestions([]);
       setLockedWordId(null);
@@ -363,6 +365,7 @@ export function LiveGamePage() {
     setWinnerUserId(null);
     setSecretWord(null);
     setFinishedStats(null);
+    setShowCollectionReward(false);
     setEvents((currentEvents) => ['Pret envoye. En attente de l autre joueur.', ...currentEvents].slice(0, 8));
   }
 
@@ -439,11 +442,11 @@ export function LiveGamePage() {
         </div>
       )}
 
-      {showCollectionReward && secretWord && (
+      {showCollectionReward && finishedStats?.collectionRewardWord && (
         <div className="collection-reward">
           <div className="collection-reward-card">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Nouveau mot</p>
-            <p className="mt-2 text-3xl font-black">{secretWord}</p>
+            <p className="mt-2 text-3xl font-black">{finishedStats.collectionRewardWord}</p>
             <p className="mt-2 text-sm font-semibold text-slate-300">Ajoute a ta collection</p>
           </div>
         </div>

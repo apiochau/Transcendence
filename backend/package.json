@@ -6,6 +6,7 @@
     "build": "nest build",
     "build:embeddings": "tsc scripts/buildEmbeddings.ts --module commonjs --target ES2021 --esModuleInterop --types node --outDir scripts/dist && node scripts/dist/buildEmbeddings.js",
     "test:similarity": "npx prisma@5.22.0 generate && npm run build && node --test test/similarity.service.test.js",
+    "test:game": "npx prisma@5.22.0 generate && npm run build && node --test test/similarity.service.test.js test/collection-and-multiplayer.test.js",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
