@@ -10,6 +10,7 @@ import { StatsModule } from './stats/stats.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { UsersModule } from './users/users.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { WebsocketModule } from './websocket/websocket.module';
     StatsModule,
     WebsocketModule,
     NotificationsModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

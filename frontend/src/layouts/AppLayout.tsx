@@ -8,6 +8,7 @@ const navItems = [
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/tournaments', label: 'Tournaments' },
   { to: '/profile', label: 'Profile' },
+  { to: '/analytics', label: 'Analytics' },
 ];
 
 export function AppLayout() {
