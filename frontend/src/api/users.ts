@@ -27,3 +27,10 @@ export function updateMyProfile(data: { displayName?: string}) {
 export function getUserProfile(id: string) {
     return apiClient.get<PublicProfile>(`/users/${id}`).then((r) => r.data);
 }
+
+export function uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    return apiClient.post<AuthUser>('/users/me/avatar', formData, {headers: { 'Content-Type': 'multipart/form-data' }, }).then((r) => r.data);
+}

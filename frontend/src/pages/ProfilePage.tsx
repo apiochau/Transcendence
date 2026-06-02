@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { getMyProfile, updateMyProfile, PublicProfile } from '../api/users';
+import { useEffect, useState, useRef } from 'react';
+import { getMyProfile, updateMyProfile, PublicProfile, uploadAvatar } from '../api/users';
 import { useAuthStore } from '../store/auth.store';
 
 export function ProfilePage() {
@@ -35,6 +35,21 @@ export function ProfilePage() {
       setSaving(false);
     }
   }
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !accessToken || !user) return;
+    try {
+      const updated = await uploadAvatar(file);
+      setProfile((prev) => prev ? { ...prev, avatarUrl: updated.avatarUrl } : prev);
+      setSession(accessToken, updated);
+    } catch {
+      setError('Erreur lors du téléchargement.');
+    }
+  }
+
   const avatarLetter = (profile?.displayName ?? profile?.username ?? '?')[0].toUpperCase();
 
   return (
@@ -43,22 +58,38 @@ export function ProfilePage() {
       <div className="card-surface mt-8 p-6">
         {/* Avatar */}
         <div className="flex items-center gap-5">
-          {profile?.avatarUrl ? (
-            <img
-              src={profile.avatarUrl}
-              alt="avatar"
-              className="h-20 w-20 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
-              {avatarLetter}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative h-20 w-20 rounded-full overflow-hidden"
+            title="Changer l'avatar"
+          >
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt="avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
+                {avatarLetter}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition group-hover:opacity-100">
+              <span className="text-xs font-semibold text-white">Modifier</span>
             </div>
-          )}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".jpg,.jpeg,.png,.webp"
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <div>
             <p className="text-xl font-bold">{profile?.displayName ?? profile?.username}</p>
             <p className="text-sm text-slate-500">@{profile?.username}</p>
             <p className="text-sm text-slate-500">{profile?.email ?? user?.email}</p>
-
           </div>
         </div>
 

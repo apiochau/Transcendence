@@ -30,6 +30,8 @@ services:
       CORS_ORIGIN: http://localhost:8080
     depends_on:
       - postgres
+    volumes:
+      - uploads-data:/app/uploads
     expose:
       - "3000"
     networks:
@@ -67,3 +69,4 @@ networks:
 
 volumes:
   postgres-data:
+  uploads-data:
