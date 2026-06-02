@@ -46,6 +46,7 @@ model User {
   stats             UserStats?
   notifications     Notification[]
   tournamentEntries TournamentEntry[]
+  wordCollection    WordCollectionItem[]
 }
 
 model Friendship {
@@ -126,10 +127,26 @@ model Word {
   normalizedText    String              @unique
   rarity            Int                 @default(50)
   value             Int                 @default(1)
+  rarityLabel       String              @default("common")
   category          String?
   embedding         Json
   secretSessions    GameSession[]       @relation("SecretWordSessions")
   suggestionHistory SuggestionHistory[]
+  collectionItems   WordCollectionItem[]
+}
+
+model WordCollectionItem {
+  id          String   @id @default(uuid())
+  userId      String
+  wordId      String
+  quantity    Int      @default(1)
+  firstWonAt  DateTime @default(now())
+  lastWonAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word        Word     @relation(fields: [wordId], references: [id])
+
+  @@unique([userId, wordId])
+  @@index([userId])
 }
 
 model GameSession {

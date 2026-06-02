@@ -11,6 +11,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { CollectionService } from '../collection/collection.service';
 import { SimilarityService } from '../game/similarity.service';
 import { SimilarityBucket } from '../game/types/suggestion.types';
 import { LocalWord, WordService } from '../game/word.service';
@@ -49,6 +50,7 @@ interface PlayerState {
   clickedSuggestions: MultiplayerHistoryItem[];
   finalAttemptCount: number;
   cooldownUntil: number | null;
+  disconnectForfeitTimer: NodeJS.Timeout | null;
 }
 
 interface RoomState {
@@ -60,11 +62,27 @@ interface RoomState {
   winnerUserId: string | null;
   startedAt: number | null;
   finishedAt: number | null;
+  finishedPayload: FinishedPayload | null;
 }
 
 type RankedWord = LocalWord & { score: number; bucket: SimilarityBucket };
 
+interface FinishedPayload {
+  winnerUserId: string;
+  loserUserId: string | null;
+  secretWord: string;
+  durationSeconds: number;
+  players: Array<{
+    userId: string;
+    isWinner: boolean;
+    selectedWordCount: number;
+    finalAttemptCount: number;
+    bestScore: number;
+  }>;
+}
+
 const SUGGESTION_COOLDOWN_MS = 5000;
+const DISCONNECT_FORFEIT_GRACE_MS = 30000;
 const REQUIRED_PLAYER_COUNT = 2;
 const BUCKETS: SimilarityBucket[] = ['hot', 'warm', 'cold', 'frozen'];
 const BUCKET_FALLBACK_ORDER: Record<SimilarityBucket, SimilarityBucket[]> = {
@@ -85,6 +103,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly statsService: StatsService,
     private readonly wordService: WordService,
     private readonly similarityService: SimilarityService,
+    private readonly collectionService: CollectionService,
   ) {}
 
   @WebSocketServer()
@@ -117,14 +136,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     await client.join(payload.roomId);
     room.players.add(userId);
-    this.getPlayerState(room, userId).socketIds.add(client.id);
+    const playerState = this.getPlayerState(room, userId);
+    playerState.socketIds.add(client.id);
+    this.clearDisconnectForfeitTimer(playerState);
     client.emit('room:joined', { roomId: payload.roomId, playerId: userId });
     this.emitReadyState(payload.roomId);
 
     if (room.started) {
-      client.emit('game:started', { roomId: payload.roomId });
-      this.emitCurrentSuggestionsToPlayer(room, userId);
-      this.emitOpponentState(payload.roomId, room, userId);
+      this.emitSessionState(payload.roomId, room, userId);
+      return;
+    }
+
+    if (room.finished && room.finishedPayload) {
+      client.emit('game:finished', room.finishedPayload);
     }
   }
 
@@ -156,6 +180,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       void this.submitFinalAnswer(client, payload);
       return;
     }
+
+    if (payload.event === 'player:forfeit') {
+      void this.forfeitRoom(client, payload.roomId);
+      return;
+    }
   }
 
   private getRoomState(roomId: string) {
@@ -173,6 +202,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       winnerUserId: null,
       startedAt: null,
       finishedAt: null,
+      finishedPayload: null,
     };
 
     this.rooms.set(roomId, room);
@@ -193,6 +223,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       clickedSuggestions: [],
       finalAttemptCount: 0,
       cooldownUntil: null,
+      disconnectForfeitTimer: null,
     };
     room.playerStates.set(userId, playerState);
     return playerState;
@@ -233,6 +264,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     room.secretWord = this.wordService.getRandomSecretWord();
     room.startedAt = Date.now();
     room.finishedAt = null;
+    room.finishedPayload = null;
 
     for (const userId of room.players) {
       const playerState = this.getPlayerState(room, userId);
@@ -241,6 +273,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       playerState.clickedSuggestions = [];
       playerState.finalAttemptCount = 0;
       playerState.cooldownUntil = null;
+      this.clearDisconnectForfeitTimer(playerState);
     }
 
     this.server.to(roomId).emit('game:started', { roomId });
@@ -419,6 +452,28 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     });
   }
 
+  private emitSessionState(roomId: string, room: RoomState, userId: string) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
+      return;
+    }
+
+    const currentSuggestions = playerState.currentWordIds
+      .map((wordId) => this.wordService.getWord(wordId))
+      .filter((word): word is LocalWord => Boolean(word))
+      .map((word) => ({ wordId: word.id, word: word.text }));
+
+    this.emitToPlayer(room, userId, 'game:session-state', {
+      roomId,
+      started: room.started,
+      finished: room.finished,
+      suggestions: currentSuggestions,
+      history: playerState.clickedSuggestions,
+      cooldownMs: playerState.cooldownUntil ? Math.max(0, playerState.cooldownUntil - Date.now()) : 0,
+      opponentState: this.buildOpponentState(roomId, room, userId),
+    });
+  }
+
   private emitOpponentStates(roomId: string, room: RoomState) {
     for (const userId of room.players) {
       this.emitOpponentState(roomId, room, userId);
@@ -426,18 +481,21 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   private emitOpponentState(roomId: string, room: RoomState, receiverUserId: string) {
+    this.emitToPlayer(room, receiverUserId, 'game:opponent-state', this.buildOpponentState(roomId, room, receiverUserId));
+  }
+
+  private buildOpponentState(roomId: string, room: RoomState, receiverUserId: string) {
     const opponentId = Array.from(room.players).find((userId) => userId !== receiverUserId);
     if (!opponentId) {
-      this.emitToPlayer(room, receiverUserId, 'game:opponent-state', {
+      return {
         roomId,
         topSuggestions: [],
         finalAttemptCount: 0,
-      });
-      return;
+      };
     }
 
     const opponentState = this.getPlayerState(room, opponentId);
-    this.emitToPlayer(room, receiverUserId, 'game:opponent-state', {
+    return {
       roomId,
       opponentUserId: opponentId,
       topSuggestions: opponentState.clickedSuggestions
@@ -451,7 +509,24 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
           createdAt: item.createdAt,
         })),
       finalAttemptCount: opponentState.finalAttemptCount,
-    });
+    };
+  }
+
+  private async forfeitRoom(client: Socket, roomId: string) {
+    const userId = this.getAuthenticatedUserId(client);
+    const room = this.rooms.get(roomId);
+
+    if (!userId || !room || room.finished) {
+      return;
+    }
+
+    const winnerUserId = Array.from(room.players).find((playerId) => playerId !== userId);
+    if (!winnerUserId || !room.secretWord) {
+      this.removeClientFromRoom(client, roomId);
+      return;
+    }
+
+    await this.finishRoom(roomId, room, winnerUserId);
   }
 
   private async finishRoom(roomId: string, room: RoomState, winnerUserId: string) {
@@ -464,7 +539,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     room.winnerUserId = winnerUserId;
     room.finishedAt = Date.now();
     const loserUserId = Array.from(room.players).find((userId) => userId !== winnerUserId) ?? null;
-    const finishedPayload = {
+    const finishedPayload: FinishedPayload = {
       winnerUserId,
       loserUserId,
       secretWord: room.secretWord.text,
@@ -483,9 +558,20 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         };
       }),
     };
+    room.finishedPayload = finishedPayload;
+
+    for (const userId of room.players) {
+      this.clearDisconnectForfeitTimer(this.getPlayerState(room, userId));
+    }
 
     for (const userId of room.players) {
       this.emitToPlayer(room, userId, 'game:finished', finishedPayload);
+    }
+
+    try {
+      await this.collectionService.awardWord(winnerUserId, room.secretWord.id);
+    } catch (error) {
+      this.logger.warn(`failed to award word "${room.secretWord.id}" to winner: ${(error as Error).message}`);
     }
 
     if (loserUserId) {
@@ -545,6 +631,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     const playerState = room.playerStates.get(userId);
     playerState?.socketIds.delete(client.id);
 
+    if (room.started && !room.finished && playerState && playerState.socketIds.size === 0) {
+      this.scheduleDisconnectForfeit(roomId, userId, playerState);
+    }
+
     if (!room.started && playerState && playerState.socketIds.size === 0) {
       room.players.delete(userId);
       room.playerStates.delete(userId);
@@ -556,6 +646,37 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     this.emitReadyState(roomId);
+  }
+
+  private scheduleDisconnectForfeit(roomId: string, userId: string, playerState: PlayerState) {
+    this.clearDisconnectForfeitTimer(playerState);
+    playerState.disconnectForfeitTimer = setTimeout(() => {
+      const room = this.rooms.get(roomId);
+      const disconnectedPlayerState = room?.playerStates.get(userId);
+      if (
+        !room ||
+        !disconnectedPlayerState ||
+        !room.started ||
+        room.finished ||
+        disconnectedPlayerState.socketIds.size > 0
+      ) {
+        return;
+      }
+
+      const winnerUserId = Array.from(room.players).find((playerId) => playerId !== userId);
+      if (winnerUserId) {
+        void this.finishRoom(roomId, room, winnerUserId);
+      }
+    }, DISCONNECT_FORFEIT_GRACE_MS);
+  }
+
+  private clearDisconnectForfeitTimer(playerState: PlayerState) {
+    if (!playerState.disconnectForfeitTimer) {
+      return;
+    }
+
+    clearTimeout(playerState.disconnectForfeitTimer);
+    playerState.disconnectForfeitTimer = null;
   }
 
   private shuffle<T>(items: T[]): T[] {

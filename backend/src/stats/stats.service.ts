@@ -9,14 +9,61 @@ export class StatsService {
     return this.prisma.userStats.findUnique({ where: { userId } });
   }
 
-  leaderboard() {
-    return this.prisma.userStats.findMany({
-      orderBy: [{ rating: 'desc' }, { wins: 'desc' }],
-      take: 50,
+  async leaderboard() {
+    const collectionItems = await this.prisma.wordCollectionItem.findMany({
       include: {
-        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        word: { select: { value: true } },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+            stats: { select: { wins: true, gamesPlayed: true } },
+          },
+        },
       },
     });
+
+    const rowsByUser = new Map<string, {
+      id: string;
+      collectionValue: number;
+      wins: number;
+      gamesPlayed: number;
+      user: {
+        id: string;
+        username: string;
+        displayName: string | null;
+        avatarUrl: string | null;
+      };
+    }>();
+
+    for (const item of collectionItems) {
+      const existingRow = rowsByUser.get(item.userId);
+      const value = item.word.value * item.quantity;
+
+      if (existingRow) {
+        existingRow.collectionValue += value;
+        continue;
+      }
+
+      rowsByUser.set(item.userId, {
+        id: item.userId,
+        collectionValue: value,
+        wins: item.user.stats?.wins ?? 0,
+        gamesPlayed: item.user.stats?.gamesPlayed ?? 0,
+        user: {
+          id: item.user.id,
+          username: item.user.username,
+          displayName: item.user.displayName,
+          avatarUrl: item.user.avatarUrl,
+        },
+      });
+    }
+
+    return Array.from(rowsByUser.values())
+      .sort((left, right) => right.collectionValue - left.collectionValue || right.wins - left.wins)
+      .slice(0, 50);
   }
 
   async recordOneVsOneResult(winnerId: string, loserId: string) {

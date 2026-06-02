@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useBlocker, useNavigate, useParams } from 'react-router-dom';
 import { Socket } from 'socket.io-client';
 import { createSocket } from '../api/socket';
 import { useAuthStore } from '../store/auth.store';
@@ -56,6 +56,15 @@ interface GameFinishedPayload {
   players: FinishedPlayerStats[];
 }
 
+interface SessionStatePayload {
+  started: boolean;
+  finished: boolean;
+  suggestions: SuggestedWord[];
+  history: RevealedSuggestion[];
+  cooldownMs: number;
+  opponentState: OpponentState;
+}
+
 const bucketLabels: Record<SimilarityBucket, string> = {
   hot: 'Brulant',
   warm: 'Tiede',
@@ -83,6 +92,8 @@ export function LiveGamePage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const socketRef = useRef<Socket | null>(null);
+  const activeMatchRef = useRef(false);
+  const pendingSuggestionTimeoutRef = useRef<number | null>(null);
   const [connected, setConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Connexion...');
   const [events, setEvents] = useState<string[]>([]);
@@ -102,6 +113,7 @@ export function LiveGamePage() {
   const [winnerUserId, setWinnerUserId] = useState<string | null>(null);
   const [secretWord, setSecretWord] = useState<string | null>(null);
   const [finishedStats, setFinishedStats] = useState<GameFinishedPayload | null>(null);
+  const [showCollectionReward, setShowCollectionReward] = useState(false);
 
   const sortedHistory = useMemo(
     () => history.slice().sort((left, right) => right.score - left.score),
@@ -112,6 +124,43 @@ export function LiveGamePage() {
   const waitingForNextSuggestions = Boolean(cooldownUntil && cooldownRemaining > 0);
   const myFinishedStats = finishedStats?.players.find((player) => player.userId === user?.id) ?? null;
   const opponentFinishedStats = finishedStats?.players.find((player) => player.userId !== user?.id) ?? null;
+  const hasActiveMatch = started && !finished;
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => (
+    hasActiveMatch && currentLocation.pathname !== nextLocation.pathname
+  ));
+
+  useEffect(() => {
+    activeMatchRef.current = hasActiveMatch;
+  }, [hasActiveMatch]);
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') {
+      return;
+    }
+
+    const shouldLeave = window.confirm('Quitter cette partie donnera la victoire a ton adversaire. Continuer ?');
+    if (!shouldLeave) {
+      blocker.reset();
+      return;
+    }
+
+    socketRef.current?.emit('game:signal', { roomId, event: 'player:forfeit' });
+    blocker.proceed();
+  }, [blocker, roomId]);
+
+  useEffect(() => {
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if (!activeMatchRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = '';
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     const socket = createSocket();
@@ -119,6 +168,17 @@ export function LiveGamePage() {
 
     function addEvent(message: string) {
       setEvents((currentEvents) => [message, ...currentEvents].slice(0, 8));
+    }
+
+    function scheduleNextSuggestions(cooldownMs: number) {
+      if (pendingSuggestionTimeoutRef.current) {
+        window.clearTimeout(pendingSuggestionTimeoutRef.current);
+      }
+
+      pendingSuggestionTimeoutRef.current = window.setTimeout(() => {
+        socket.emit('game:signal', { roomId, event: 'suggestions:next' });
+        pendingSuggestionTimeoutRef.current = null;
+      }, cooldownMs + 150);
     }
 
     function onConnect() {
@@ -171,6 +231,25 @@ export function LiveGamePage() {
       addEvent('Nouvelles suggestions disponibles.');
     }
 
+    function onSessionState(payload: SessionStatePayload) {
+      setStarted(payload.started && !payload.finished);
+      setFinished(payload.finished);
+      setSuggestions(payload.suggestions);
+      setLockedWordId(payload.suggestions.length === 0 && payload.cooldownMs > 0 ? 'resume-lock' : null);
+      setRevealedSuggestion(null);
+      setHistory(payload.history);
+      setOpponentState(payload.opponentState);
+      setReadySent(payload.started);
+      setFinalMessage(null);
+      setCooldownUntil(payload.cooldownMs > 0 ? Date.now() + payload.cooldownMs : null);
+      setCooldownRemaining(payload.cooldownMs > 0 ? Math.ceil(payload.cooldownMs / 1000) : 0);
+      addEvent('Partie reprise.');
+
+      if (payload.cooldownMs > 0) {
+        scheduleNextSuggestions(payload.cooldownMs);
+      }
+    }
+
     function onSuggestionResult(payload: RevealedSuggestion) {
       setRevealedSuggestion(payload);
       setHistory((currentHistory) => [payload, ...currentHistory]);
@@ -179,9 +258,7 @@ export function LiveGamePage() {
       if (payload.cooldownMs) {
         const nextCooldownUntil = Date.now() + payload.cooldownMs;
         setCooldownUntil(nextCooldownUntil);
-        window.setTimeout(() => {
-          socket.emit('game:signal', { roomId, event: 'suggestions:next' });
-        }, payload.cooldownMs + 150);
+        scheduleNextSuggestions(payload.cooldownMs);
       }
     }
 
@@ -201,6 +278,7 @@ export function LiveGamePage() {
       setWinnerUserId(payload.winnerUserId);
       setSecretWord(payload.secretWord);
       setFinishedStats(payload);
+      setShowCollectionReward(payload.winnerUserId === user?.id);
       setReadySent(false);
       setSuggestions([]);
       setLockedWordId(null);
@@ -221,6 +299,7 @@ export function LiveGamePage() {
     socket.on('connect_error', onConnectError);
     socket.on('game:ready-state', onReadyState);
     socket.on('game:started', onGameStarted);
+    socket.on('game:session-state', onSessionState);
     socket.on('game:suggestions', onSuggestions);
     socket.on('game:suggestion-result', onSuggestionResult);
     socket.on('game:opponent-state', onOpponentState);
@@ -236,6 +315,7 @@ export function LiveGamePage() {
       socket.off('connect_error', onConnectError);
       socket.off('game:ready-state', onReadyState);
       socket.off('game:started', onGameStarted);
+      socket.off('game:session-state', onSessionState);
       socket.off('game:suggestions', onSuggestions);
       socket.off('game:suggestion-result', onSuggestionResult);
       socket.off('game:opponent-state', onOpponentState);
@@ -243,6 +323,10 @@ export function LiveGamePage() {
       socket.off('game:finished', onGameFinished);
       socket.off('game:error', onGameError);
       socket.disconnect();
+      if (pendingSuggestionTimeoutRef.current) {
+        window.clearTimeout(pendingSuggestionTimeoutRef.current);
+        pendingSuggestionTimeoutRef.current = null;
+      }
       if (socketRef.current === socket) {
         socketRef.current = null;
       }
@@ -319,6 +403,15 @@ export function LiveGamePage() {
     navigate('/matchmaking');
   }
 
+  useEffect(() => {
+    if (!showCollectionReward) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => setShowCollectionReward(false), 3600);
+    return () => window.clearTimeout(timeoutId);
+  }, [showCollectionReward]);
+
   return (
     <section className="page-enter">
       {(isWinner || isLoser) && (
@@ -342,6 +435,16 @@ export function LiveGamePage() {
             </p>
             <h2 className="mt-2 text-3xl font-black">{isWinner ? 'Tu as trouve le mot' : 'L adversaire a trouve avant toi'}</h2>
             {secretWord && <p className="mt-2 text-sm text-slate-300">Mot secret: {secretWord}</p>}
+          </div>
+        </div>
+      )}
+
+      {showCollectionReward && secretWord && (
+        <div className="collection-reward">
+          <div className="collection-reward-card">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">Nouveau mot</p>
+            <p className="mt-2 text-3xl font-black">{secretWord}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-300">Ajoute a ta collection</p>
           </div>
         </div>
       )}

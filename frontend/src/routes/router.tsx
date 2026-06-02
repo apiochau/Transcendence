@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AppLayout } from '../layouts/AppLayout';
+import { CollectionPage } from '../pages/CollectionPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LandingPage } from '../pages/LandingPage';
 import { LeaderboardPage } from '../pages/LeaderboardPage';
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/matchmaking', element: <MatchmakingPage /> },
           { path: '/solo', element: <SoloGamePage /> },
+          { path: '/collection', element: <CollectionPage /> },
           { path: '/game/:roomId', element: <LiveGamePage /> },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/leaderboard', element: <LeaderboardPage /> },
