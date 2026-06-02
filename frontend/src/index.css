@@ -285,7 +285,7 @@ textarea::placeholder {
     z-index: 50;
     overflow: hidden;
     background: radial-gradient(circle at 50% 35%, rgb(20 184 166 / 0.28), transparent 24rem);
-    animation: victory-fade 2.8s ease both;
+    animation: victory-fade 5.8s ease both;
   }
 
   .victory-banner {
@@ -299,7 +299,7 @@ textarea::placeholder {
     box-shadow: 0 24px 70px rgb(20 184 166 / 0.22);
     padding: 1rem 1.4rem;
     text-align: center;
-    animation: victory-pop 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: victory-pop 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .confetti-piece {
@@ -312,7 +312,7 @@ textarea::placeholder {
     background: var(--confetti-color);
     opacity: 0;
     transform: rotate(var(--confetti-rotate));
-    animation: confetti-fall 2.6s cubic-bezier(0.18, 0.85, 0.38, 1) var(--confetti-delay) both;
+    animation: confetti-fall 5.2s cubic-bezier(0.18, 0.85, 0.38, 1) var(--confetti-delay) both;
   }
 }
 

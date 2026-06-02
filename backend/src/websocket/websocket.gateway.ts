@@ -11,6 +11,9 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { SimilarityService } from '../game/similarity.service';
+import { SimilarityBucket } from '../game/types/suggestion.types';
+import { LocalWord, WordService } from '../game/word.service';
 import { StatsService } from '../stats/stats.service';
 
 interface JoinRoomPayload {
@@ -21,51 +24,55 @@ interface GameSignalPayload {
   roomId: string;
   event: string;
   data?: {
-    answerIndex?: number;
+    wordId?: string;
+    answer?: string;
   };
-}
-
-interface QuizQuestion {
-  id: string;
-  question: string;
-  answers: string[];
-  correctIndex: number;
 }
 
 interface JwtPayload {
   sub: string;
 }
 
-interface RoomState {
-  players: Set<string>;
-  ready: Set<string>;
-  currentQuestionIndex: number;
-  answers: Map<string, number>;
-  scores: Map<string, number>;
-  started: boolean;
-  acceptingAnswers: boolean;
+interface MultiplayerHistoryItem {
+  wordId: string;
+  word: string;
+  score: number;
+  bucket: SimilarityBucket;
+  createdAt: string;
 }
 
-const quizQuestions: QuizQuestion[] = [
-  {
-    id: 'realtime',
-    question: 'Quel outil est utilise pour le temps reel dans cette app ?',
-    answers: ['Socket.IO', 'SMTP', 'GraphQL uniquement', 'Redis CLI'],
-    correctIndex: 0,
-  },
-  {
-    id: 'backend',
-    question: 'Quel framework backend lance l API ?',
-    answers: ['NestJS', 'Vite', 'Tailwind CSS', 'Zustand'],
-    correctIndex: 0,
-  },
-  {
-    id: 'database',
-    question: 'Quel ORM est branche sur PostgreSQL ?',
-    answers: ['Prisma', 'Axios', 'React Router', 'Nginx'],
-    correctIndex: 0,
-  },
-];
+interface PlayerState {
+  socketIds: Set<string>;
+  ready: boolean;
+  shownWordIds: Set<string>;
+  currentWordIds: string[];
+  clickedSuggestions: MultiplayerHistoryItem[];
+  finalAttemptCount: number;
+  cooldownUntil: number | null;
+}
+
+interface RoomState {
+  players: Set<string>;
+  playerStates: Map<string, PlayerState>;
+  started: boolean;
+  finished: boolean;
+  secretWord: LocalWord | null;
+  winnerUserId: string | null;
+  startedAt: number | null;
+  finishedAt: number | null;
+}
+
+type RankedWord = LocalWord & { score: number; bucket: SimilarityBucket };
+
+const SUGGESTION_COOLDOWN_MS = 5000;
+const REQUIRED_PLAYER_COUNT = 2;
+const BUCKETS: SimilarityBucket[] = ['hot', 'warm', 'cold', 'frozen'];
+const BUCKET_FALLBACK_ORDER: Record<SimilarityBucket, SimilarityBucket[]> = {
+  hot: ['hot', 'warm', 'cold', 'frozen'],
+  warm: ['warm', 'hot', 'cold', 'frozen'],
+  cold: ['cold', 'warm', 'frozen', 'hot'],
+  frozen: ['frozen', 'cold', 'warm', 'hot'],
+};
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -76,6 +83,8 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly statsService: StatsService,
+    private readonly wordService: WordService,
+    private readonly similarityService: SimilarityService,
   ) {}
 
   @WebSocketServer()
@@ -93,22 +102,36 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @SubscribeMessage('room:join')
   async joinRoom(@ConnectedSocket() client: Socket, @MessageBody() payload: JoinRoomPayload) {
-    await client.join(payload.roomId);
+    const userId = this.getAuthenticatedUserId(client);
+
+    if (!userId) {
+      client.emit('game:error', { message: 'Socket not authenticated' });
+      return;
+    }
+
     const room = this.getRoomState(payload.roomId);
-    room.players.add(client.id);
-    client.emit('room:joined', { roomId: payload.roomId });
+    if (!room.players.has(userId) && room.players.size >= REQUIRED_PLAYER_COUNT) {
+      client.emit('game:error', { message: 'Room is already full' });
+      return;
+    }
+
+    await client.join(payload.roomId);
+    room.players.add(userId);
+    this.getPlayerState(room, userId).socketIds.add(client.id);
+    client.emit('room:joined', { roomId: payload.roomId, playerId: userId });
     this.emitReadyState(payload.roomId);
 
     if (room.started) {
-      client.emit('game:started', { totalQuestions: quizQuestions.length });
-      this.emitQuestionToClient(client, room);
+      client.emit('game:started', { roomId: payload.roomId });
+      this.emitCurrentSuggestionsToPlayer(room, userId);
+      this.emitOpponentState(payload.roomId, room, userId);
     }
   }
 
   @SubscribeMessage('room:leave')
   async leaveRoom(@ConnectedSocket() client: Socket, @MessageBody() payload: JoinRoomPayload) {
     await client.leave(payload.roomId);
-    this.removeClientFromRoom(client.id, payload.roomId);
+    this.removeClientFromRoom(client, payload.roomId);
     client.emit('room:left', { roomId: payload.roomId });
   }
 
@@ -119,12 +142,20 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       return;
     }
 
-    if (payload.event === 'game:answer') {
-      this.submitAnswer(client, payload);
+    if (payload.event === 'suggestions:next') {
+      this.generateSuggestionsForClient(client, payload.roomId);
       return;
     }
 
-    client.to(payload.roomId).emit('game:signal', payload);
+    if (payload.event === 'suggestion:click') {
+      this.clickSuggestion(client, payload);
+      return;
+    }
+
+    if (payload.event === 'final-answer') {
+      void this.submitFinalAnswer(client, payload);
+      return;
+    }
   }
 
   private getRoomState(roomId: string) {
@@ -135,138 +166,344 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     const room: RoomState = {
       players: new Set<string>(),
-      ready: new Set<string>(),
-      currentQuestionIndex: 0,
-      answers: new Map<string, number>(),
-      scores: new Map<string, number>(),
+      playerStates: new Map<string, PlayerState>(),
       started: false,
-      acceptingAnswers: false,
+      finished: false,
+      secretWord: null,
+      winnerUserId: null,
+      startedAt: null,
+      finishedAt: null,
     };
 
     this.rooms.set(roomId, room);
     return room;
   }
 
-  private markPlayerReady(client: Socket, roomId: string) {
-    const room = this.getRoomState(roomId);
-    room.players.add(client.id);
-    room.ready.add(client.id);
-    this.server.to(roomId).emit('game:signal', { roomId, event: 'player:ready' });
-    this.emitReadyState(roomId);
-
-    if (!room.started && room.players.size >= 2 && room.ready.size >= 2) {
-      room.started = true;
-      room.acceptingAnswers = true;
-      room.currentQuestionIndex = 0;
-      room.answers.clear();
-      room.scores.clear();
-      for (const playerId of room.players) {
-        room.scores.set(playerId, 0);
-      }
-      this.server.to(roomId).emit('game:started', { totalQuestions: quizQuestions.length });
-      this.emitCurrentQuestion(roomId);
+  private getPlayerState(room: RoomState, userId: string) {
+    const existingState = room.playerStates.get(userId);
+    if (existingState) {
+      return existingState;
     }
+
+    const playerState: PlayerState = {
+      socketIds: new Set<string>(),
+      ready: false,
+      shownWordIds: new Set<string>(),
+      currentWordIds: [],
+      clickedSuggestions: [],
+      finalAttemptCount: 0,
+      cooldownUntil: null,
+    };
+    room.playerStates.set(userId, playerState);
+    return playerState;
   }
 
-  private submitAnswer(client: Socket, payload: GameSignalPayload) {
-    const room = this.rooms.get(payload.roomId);
-    if (!room?.started || !room.acceptingAnswers || payload.data?.answerIndex === undefined) {
+  private markPlayerReady(client: Socket, roomId: string) {
+    const userId = this.getAuthenticatedUserId(client);
+    if (!userId) {
+      client.emit('game:error', { message: 'Socket not authenticated' });
       return;
     }
 
-    room.answers.set(client.id, payload.data.answerIndex);
-    const question = quizQuestions[room.currentQuestionIndex];
-    if (payload.data.answerIndex === question.correctIndex) {
-      room.scores.set(client.id, (room.scores.get(client.id) ?? 0) + 1);
-    }
+    const room = this.getRoomState(roomId);
+    room.players.add(userId);
+    const playerState = this.getPlayerState(room, userId);
+    playerState.socketIds.add(client.id);
+    playerState.ready = true;
 
-    this.server.to(payload.roomId).emit('game:answer-state', {
-      answered: room.answers.size,
-      players: room.players.size,
-    });
+    this.emitReadyState(roomId);
 
-    if (room.answers.size >= room.players.size) {
-      this.revealAnswer(payload.roomId, room);
+    if (this.canStartRoom(room)) {
+      this.startRoom(roomId, room);
     }
   }
 
-  private revealAnswer(roomId: string, room: RoomState) {
-    room.acceptingAnswers = false;
-    const question = quizQuestions[room.currentQuestionIndex];
-    this.server.to(roomId).emit('game:answer-result', {
-      questionId: question.id,
-      correctIndex: question.correctIndex,
-    });
+  private canStartRoom(room: RoomState) {
+    if (room.started || room.finished || room.players.size < REQUIRED_PLAYER_COUNT) {
+      return false;
+    }
 
-    setTimeout(() => {
-      room.currentQuestionIndex += 1;
-      room.answers.clear();
+    return Array.from(room.players).every((userId) => this.getPlayerState(room, userId).ready);
+  }
 
-      if (room.currentQuestionIndex >= quizQuestions.length) {
-        void this.finishGame(roomId, room);
-        this.rooms.delete(roomId);
-        return;
+  private startRoom(roomId: string, room: RoomState) {
+    room.started = true;
+    room.finished = false;
+    room.winnerUserId = null;
+    room.secretWord = this.wordService.getRandomSecretWord();
+    room.startedAt = Date.now();
+    room.finishedAt = null;
+
+    for (const userId of room.players) {
+      const playerState = this.getPlayerState(room, userId);
+      playerState.shownWordIds.clear();
+      playerState.currentWordIds = [];
+      playerState.clickedSuggestions = [];
+      playerState.finalAttemptCount = 0;
+      playerState.cooldownUntil = null;
+    }
+
+    this.server.to(roomId).emit('game:started', { roomId });
+    for (const userId of room.players) {
+      this.generateSuggestions(roomId, room, userId);
+      this.emitOpponentState(roomId, room, userId);
+    }
+    this.emitReadyState(roomId);
+  }
+
+  private generateSuggestionsForClient(client: Socket, roomId: string) {
+    const userId = this.getAuthenticatedUserId(client);
+    const room = this.rooms.get(roomId);
+
+    if (!userId || !room) {
+      client.emit('game:error', { message: 'Room not found' });
+      return;
+    }
+
+    this.generateSuggestions(roomId, room, userId);
+  }
+
+  private generateSuggestions(roomId: string, room: RoomState, userId: string) {
+    const secretWord = room.secretWord;
+    const playerState = room.playerStates.get(userId);
+
+    if (!secretWord || !playerState || !room.started || room.finished) {
+      return;
+    }
+
+    if (playerState.cooldownUntil && playerState.cooldownUntil > Date.now()) {
+      this.emitToPlayer(room, userId, 'game:error', {
+        message: 'Suggestions are still cooling down',
+        remainingMs: playerState.cooldownUntil - Date.now(),
+      });
+      return;
+    }
+
+    const excludedWordIds = new Set<string>([secretWord.id, ...playerState.shownWordIds]);
+    const rankedWords = this.shuffle(this.similarityService.rankKnownWordsBySimilarity(secretWord.id, excludedWordIds));
+    const selected = new Map<string, RankedWord>();
+
+    for (const bucket of BUCKETS) {
+      const word = this.pickFromBucket(bucket, rankedWords, selected);
+      if (word) {
+        selected.set(word.id, word);
+      }
+    }
+
+    for (const word of rankedWords) {
+      if (selected.size >= 4) {
+        break;
       }
 
-      this.emitCurrentQuestion(roomId);
-    }, 1800);
+      if (!selected.has(word.id)) {
+        selected.set(word.id, word);
+      }
+    }
+
+    const suggestions = this.shuffle(Array.from(selected.values()).slice(0, 4));
+    playerState.currentWordIds = suggestions.map((word) => word.id);
+    suggestions.forEach((word) => playerState.shownWordIds.add(word.id));
+    playerState.cooldownUntil = null;
+
+    this.emitToPlayer(room, userId, 'game:suggestions', {
+      roomId,
+      suggestions: suggestions.map((word) => ({ wordId: word.id, word: word.text })),
+    });
+  }
+
+  private clickSuggestion(client: Socket, payload: GameSignalPayload) {
+    const userId = this.getAuthenticatedUserId(client);
+    const room = this.rooms.get(payload.roomId);
+    const wordId = payload.data?.wordId;
+
+    if (!userId || !room || !wordId || !room.secretWord || !room.started || room.finished) {
+      return;
+    }
+
+    const playerState = room.playerStates.get(userId);
+    if (!playerState || !playerState.currentWordIds.includes(wordId)) {
+      client.emit('game:error', { message: 'This suggestion is not available anymore' });
+      return;
+    }
+
+    const word = this.wordService.getWord(wordId);
+    if (!word) {
+      client.emit('game:error', { message: 'Unknown suggestion' });
+      return;
+    }
+
+    const score = this.similarityService.calculateKnownSimilarity(room.secretWord.id, word.id);
+    const bucket = this.similarityService.getBucket(score);
+    const historyItem: MultiplayerHistoryItem = {
+      wordId: word.id,
+      word: word.text,
+      score,
+      bucket,
+      createdAt: new Date().toISOString(),
+    };
+
+    playerState.clickedSuggestions.push(historyItem);
+    playerState.currentWordIds = [];
+    playerState.cooldownUntil = Date.now() + SUGGESTION_COOLDOWN_MS;
+
+    client.emit('game:suggestion-result', {
+      ...historyItem,
+      cooldownMs: SUGGESTION_COOLDOWN_MS,
+    });
+    this.emitOpponentStates(payload.roomId, room);
+  }
+
+  private async submitFinalAnswer(client: Socket, payload: GameSignalPayload) {
+    const userId = this.getAuthenticatedUserId(client);
+    const room = this.rooms.get(payload.roomId);
+    const answer = payload.data?.answer;
+
+    if (!userId || !room || !room.secretWord || !room.started || room.finished || typeof answer !== 'string') {
+      return;
+    }
+
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
+      return;
+    }
+
+    playerState.finalAttemptCount += 1;
+    const normalizedAnswer = this.wordService.normalize(answer);
+    const success = normalizedAnswer === room.secretWord.normalizedText;
+
+    if (!success) {
+      client.emit('game:final-answer-result', { success: false });
+      this.emitOpponentStates(payload.roomId, room);
+      return;
+    }
+
+    client.emit('game:final-answer-result', { success: true });
+    await this.finishRoom(payload.roomId, room, userId);
+  }
+
+  private pickFromBucket(
+    targetBucket: SimilarityBucket,
+    rankedWords: RankedWord[],
+    selected: Map<string, unknown>,
+  ) {
+    for (const bucket of BUCKET_FALLBACK_ORDER[targetBucket]) {
+      const candidate = rankedWords.find((word) => word.bucket === bucket && !selected.has(word.id));
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    return undefined;
   }
 
   private emitReadyState(roomId: string) {
     const room = this.getRoomState(roomId);
     this.server.to(roomId).emit('game:ready-state', {
       players: room.players.size,
-      ready: room.ready.size,
+      ready: Array.from(room.players).filter((userId) => this.getPlayerState(room, userId).ready).length,
       started: room.started,
     });
   }
 
-  private emitCurrentQuestion(roomId: string) {
-    const room = this.rooms.get(roomId);
-    if (!room) {
+  private emitCurrentSuggestionsToPlayer(room: RoomState, userId: string) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
       return;
     }
 
-    const question = this.getPublicQuestion(room.currentQuestionIndex);
-    room.acceptingAnswers = true;
-    this.server.to(roomId).emit('game:question', question);
+    this.emitToPlayer(room, userId, 'game:suggestions', {
+      suggestions: playerState.currentWordIds
+        .map((wordId) => this.wordService.getWord(wordId))
+        .filter((word): word is LocalWord => Boolean(word))
+        .map((word) => ({ wordId: word.id, word: word.text })),
+    });
   }
 
-  private emitQuestionToClient(client: Socket, room: RoomState) {
-    client.emit('game:question', this.getPublicQuestion(room.currentQuestionIndex));
+  private emitOpponentStates(roomId: string, room: RoomState) {
+    for (const userId of room.players) {
+      this.emitOpponentState(roomId, room, userId);
+    }
   }
 
-  private getPublicQuestion(index: number) {
-    const question = quizQuestions[index];
-    return {
-      id: question.id,
-      question: question.question,
-      answers: question.answers,
-      index,
-      total: quizQuestions.length,
-    };
-  }
-
-  private async finishGame(roomId: string, room: RoomState) {
-    const rankedPlayers = Array.from(room.players)
-      .map((socketId) => ({
-        socketId,
-        userId: this.server.sockets.sockets.get(socketId)?.data.userId as string | undefined,
-        score: room.scores.get(socketId) ?? 0,
-      }))
-      .filter((player): player is { socketId: string; userId: string; score: number } => Boolean(player.userId));
-
-    const [first, second] = rankedPlayers.sort((left, right) => right.score - left.score);
-    const hasOneVsOneWinner = rankedPlayers.length === 2 && first.score > second.score;
-
-    if (hasOneVsOneWinner) {
-      await this.statsService.recordOneVsOneResult(first.userId, second.userId);
+  private emitOpponentState(roomId: string, room: RoomState, receiverUserId: string) {
+    const opponentId = Array.from(room.players).find((userId) => userId !== receiverUserId);
+    if (!opponentId) {
+      this.emitToPlayer(room, receiverUserId, 'game:opponent-state', {
+        roomId,
+        topSuggestions: [],
+        finalAttemptCount: 0,
+      });
+      return;
     }
 
-    this.server.to(roomId).emit('game:finished', {
-      winnerUserId: hasOneVsOneWinner ? first.userId : null,
-      scores: rankedPlayers.map(({ userId, score }) => ({ userId, score })),
+    const opponentState = this.getPlayerState(room, opponentId);
+    this.emitToPlayer(room, receiverUserId, 'game:opponent-state', {
+      roomId,
+      opponentUserId: opponentId,
+      topSuggestions: opponentState.clickedSuggestions
+        .slice()
+        .sort((left, right) => right.score - left.score)
+        .slice(0, 5)
+        .map((item, index) => ({
+          rank: index + 1,
+          score: item.score,
+          bucket: item.bucket,
+          createdAt: item.createdAt,
+        })),
+      finalAttemptCount: opponentState.finalAttemptCount,
     });
+  }
+
+  private async finishRoom(roomId: string, room: RoomState, winnerUserId: string) {
+    if (room.finished || !room.secretWord) {
+      return;
+    }
+
+    room.finished = true;
+    room.started = false;
+    room.winnerUserId = winnerUserId;
+    room.finishedAt = Date.now();
+    const loserUserId = Array.from(room.players).find((userId) => userId !== winnerUserId) ?? null;
+    const finishedPayload = {
+      winnerUserId,
+      loserUserId,
+      secretWord: room.secretWord.text,
+      durationSeconds: room.startedAt ? Math.max(1, Math.round((room.finishedAt - room.startedAt) / 1000)) : 0,
+      players: Array.from(room.players).map((userId) => {
+        const playerState = this.getPlayerState(room, userId);
+        return {
+          userId,
+          isWinner: userId === winnerUserId,
+          selectedWordCount: playerState.clickedSuggestions.length,
+          finalAttemptCount: playerState.finalAttemptCount,
+          bestScore: playerState.clickedSuggestions.reduce(
+            (bestScore, item) => Math.max(bestScore, item.score),
+            0,
+          ),
+        };
+      }),
+    };
+
+    for (const userId of room.players) {
+      this.emitToPlayer(room, userId, 'game:finished', finishedPayload);
+    }
+
+    if (loserUserId) {
+      try {
+        await this.statsService.recordOneVsOneResult(winnerUserId, loserUserId);
+      } catch (error) {
+        this.logger.warn(`failed to record 1v1 result: ${(error as Error).message}`);
+      }
+    }
+  }
+
+  private emitToPlayer(room: RoomState, userId: string, event: string, payload: unknown) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState || playerState.socketIds.size === 0) {
+      return;
+    }
+
+    this.server.to(Array.from(playerState.socketIds)).emit(event, payload);
   }
 
   private authenticateClient(client: Socket) {
@@ -285,24 +522,33 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
+  private getAuthenticatedUserId(client: Socket) {
+    return typeof client.data.userId === 'string' ? client.data.userId : undefined;
+  }
+
   private removeClientFromRooms(client: Socket) {
     for (const roomId of client.rooms) {
       if (roomId !== client.id) {
-        this.removeClientFromRoom(client.id, roomId);
+        this.removeClientFromRoom(client, roomId);
       }
     }
   }
 
-  private removeClientFromRoom(clientId: string, roomId: string) {
+  private removeClientFromRoom(client: Socket, roomId: string) {
     const room = this.rooms.get(roomId);
-    if (!room) {
+    const userId = this.getAuthenticatedUserId(client);
+
+    if (!room || !userId) {
       return;
     }
 
-    room.players.delete(clientId);
-    room.ready.delete(clientId);
-    room.answers.delete(clientId);
-    room.scores.delete(clientId);
+    const playerState = room.playerStates.get(userId);
+    playerState?.socketIds.delete(client.id);
+
+    if (!room.started && playerState && playerState.socketIds.size === 0) {
+      room.players.delete(userId);
+      room.playerStates.delete(userId);
+    }
 
     if (room.players.size === 0) {
       this.rooms.delete(roomId);
@@ -310,5 +556,16 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     this.emitReadyState(roomId);
+  }
+
+  private shuffle<T>(items: T[]): T[] {
+    const shuffledItems = [...items];
+
+    for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffledItems[index], shuffledItems[randomIndex]] = [shuffledItems[randomIndex], shuffledItems[index]];
+    }
+
+    return shuffledItems;
   }
 }
