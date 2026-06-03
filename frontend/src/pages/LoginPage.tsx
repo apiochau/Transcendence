@@ -32,7 +32,7 @@ export function LoginPage() {
 
   return (
     <main className="grid min-h-screen place-items-center bg-panel px-4">
-      <form onSubmit={onSubmit} className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <form onSubmit={onSubmit} className="card-surface page-enter w-full max-w-md p-6">
         <h1 className="text-2xl font-bold">Login</h1>
         <label className="mt-6 block text-sm font-medium">Email</label>
         <input name="email" type="email" required className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2" />
@@ -42,11 +42,11 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-6 w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+          className="motion-button mt-6 w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           {isSubmitting ? 'Connexion...' : 'Sign in'}
         </button>
-        <p className="mt-4 text-sm text-slate-600">No account? <Link className="font-semibold text-accent" to="/register">Register</Link></p>
+        <p className="mt-4 text-sm text-slate-600">No account? <Link className="font-semibold text-accent transition hover:text-teal-300" to="/register">Register</Link></p>
       </form>
     </main>
   );

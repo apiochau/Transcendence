@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Socket } from 'socket.io-client';
 import { createSocket } from '../api/socket';
+import { useAuthStore } from '../store/auth.store';
 
 interface GameEvent {
   event: string;
@@ -32,8 +33,17 @@ interface AnswerState {
   players: number;
 }
 
+interface GameFinishedPayload {
+  winnerUserId: string | null;
+  scores: Array<{
+    userId: string;
+    score: number;
+  }>;
+}
+
 export function LiveGamePage() {
   const { roomId = 'lobby' } = useParams();
+  const user = useAuthStore((state) => state.user);
   const socketRef = useRef<Socket | null>(null);
   const selectedIndexRef = useRef<number | null>(null);
   const [connected, setConnected] = useState(false);
@@ -47,6 +57,7 @@ export function LiveGamePage() {
   const [answerState, setAnswerState] = useState<AnswerState | null>(null);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [winnerUserId, setWinnerUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = createSocket();
@@ -89,6 +100,7 @@ export function LiveGamePage() {
 
     function onGameStarted(payload: { totalQuestions: number }) {
       setFinished(false);
+      setWinnerUserId(null);
       setCorrectIndex(null);
       setSelectedIndex(null);
       setAnswerState(null);
@@ -120,8 +132,9 @@ export function LiveGamePage() {
       });
     }
 
-    function onGameFinished() {
+    function onGameFinished(payload: GameFinishedPayload) {
       setFinished(true);
+      setWinnerUserId(payload.winnerUserId);
       setQuestion(null);
       setReadySent(false);
       setReadyState((currentReadyState) => ({ ...currentReadyState, started: false }));
@@ -171,6 +184,7 @@ export function LiveGamePage() {
     socket.emit('game:signal', { roomId, event: 'player:ready', data: { at: new Date().toISOString() } });
     setReadySent(true);
     setFinished(false);
+    setWinnerUserId(null);
     setScore(0);
     setEvents((currentEvents) => ['Pret envoye a l adversaire.', ...currentEvents].slice(0, 8));
   }
@@ -187,17 +201,20 @@ export function LiveGamePage() {
   }
 
   return (
-    <section>
+    <section className="page-enter">
       <h1 className="text-3xl font-bold">Live Game</h1>
       <div className="mt-8 grid gap-4 md:grid-cols-[1fr_320px]">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="card-surface p-6">
           <p className="text-sm font-semibold text-slate-500">Room</p>
           <p className="mt-2 break-all text-xl font-bold">{roomId}</p>
-          <div className="mt-6 rounded-md bg-slate-50 p-4">
+          <div className="mt-6 rounded-md bg-slate-50 p-4 transition hover:bg-slate-100">
             <p className="text-sm font-medium text-slate-500">Connexion temps reel</p>
-            <p className={connected ? 'mt-1 font-semibold text-green-700' : 'mt-1 font-semibold text-warn'}>
-              {connectionStatus}
-            </p>
+            <div className="mt-1 flex items-center gap-2">
+              {connected && <span className="status-dot" />}
+              <p className={connected ? 'font-semibold text-green-700' : 'font-semibold text-warn'}>
+                {connectionStatus}
+              </p>
+            </div>
             <p className="mt-2 text-sm text-slate-600">
               Joueurs: {readyState.players} | Prets: {readyState.ready}
             </p>
@@ -207,14 +224,14 @@ export function LiveGamePage() {
               type="button"
               onClick={sendReadySignal}
               disabled={!connected || readySent}
-              className="mt-6 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="motion-button mt-6 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               {readySent ? 'En attente de l adversaire' : 'Pret'}
             </button>
           )}
 
           {question && (
-            <div className="mt-8 rounded-lg border border-slate-200 p-5">
+            <div className="soft-pop mt-8 rounded-lg border border-slate-200 p-5">
               <div className="flex items-center justify-between gap-4">
                 <p className="text-sm font-semibold text-slate-500">
                   Question {question.index + 1} / {question.total}
@@ -243,7 +260,8 @@ export function LiveGamePage() {
                       type="button"
                       onClick={() => submitAnswer(index)}
                       disabled={selectedIndex !== null || correctIndex !== null}
-                      className={`rounded-md border px-4 py-3 text-left font-medium transition ${className}`}
+                      className={`interactive-card stagger-item rounded-md border px-4 py-3 text-left font-medium disabled:cursor-not-allowed ${className}`}
+                      style={{ animationDelay: `${index * 65}ms` }}
                     >
                       {answer}
                     </button>
@@ -251,12 +269,12 @@ export function LiveGamePage() {
                 })}
               </div>
               {answerState && (
-                <p className="mt-4 text-sm font-medium text-slate-600">
+                <p className="soft-pop mt-4 text-sm font-medium text-slate-600">
                   Reponses recues: {answerState.answered} / {answerState.players}
                 </p>
               )}
               {correctIndex !== null && (
-                <p className="mt-4 text-sm font-semibold text-slate-700">
+                <p className="soft-pop mt-4 text-sm font-semibold text-slate-700">
                   Bonne reponse: {question.answers[correctIndex]}
                 </p>
               )}
@@ -264,25 +282,31 @@ export function LiveGamePage() {
           )}
 
           {finished && (
-            <div className="mt-8 rounded-lg border border-slate-200 p-5">
+            <div className="soft-pop mt-8 rounded-lg border border-slate-200 p-5">
               <p className="text-sm font-semibold text-slate-500">Resultat</p>
               <p className="mt-2 text-3xl font-bold">{score} points</p>
+              {winnerUserId && (
+                <p className={winnerUserId === user?.id ? 'mt-2 font-semibold text-green-700' : 'mt-2 font-semibold text-slate-600'}>
+                  {winnerUserId === user?.id ? 'Victoire ajoutee au leaderboard.' : 'Defaite enregistree.'}
+                </p>
+              )}
+              {!winnerUserId && <p className="mt-2 font-semibold text-slate-600">Egalite.</p>}
               <button
                 type="button"
                 onClick={sendReadySignal}
                 disabled={!connected}
-                className="mt-6 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="motion-button mt-6 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 Rejouer
               </button>
             </div>
           )}
         </div>
-        <aside className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <aside className="card-surface p-6">
           <h2 className="font-semibold">Evenements</h2>
           <div className="mt-4 grid gap-2 text-sm text-slate-600">
             {events.map((event, index) => (
-              <p key={`${event}-${index}`} className="rounded-md bg-slate-50 px-3 py-2">{event}</p>
+              <p key={`${event}-${index}`} className="stagger-item rounded-md bg-slate-50 px-3 py-2 transition hover:bg-slate-100" style={{ animationDelay: `${index * 40}ms` }}>{event}</p>
             ))}
             {events.length === 0 && <p className="text-slate-500">Aucun evenement pour le moment.</p>}
           </div>

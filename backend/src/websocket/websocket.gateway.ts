@@ -1,4 +1,6 @@
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
   MessageBody,
@@ -9,6 +11,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { StatsService } from '../stats/stats.service';
 
 interface JoinRoomPayload {
   roomId: string;
@@ -29,11 +32,16 @@ interface QuizQuestion {
   correctIndex: number;
 }
 
+interface JwtPayload {
+  sub: string;
+}
+
 interface RoomState {
   players: Set<string>;
   ready: Set<string>;
   currentQuestionIndex: number;
   answers: Map<string, number>;
+  scores: Map<string, number>;
   started: boolean;
   acceptingAnswers: boolean;
 }
@@ -64,10 +72,17 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   private readonly logger = new Logger(RealtimeGateway.name);
   private readonly rooms = new Map<string, RoomState>();
 
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly statsService: StatsService,
+  ) {}
+
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket) {
+    this.authenticateClient(client);
     this.logger.log(`socket connected: ${client.id}`);
   }
 
@@ -123,6 +138,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       ready: new Set<string>(),
       currentQuestionIndex: 0,
       answers: new Map<string, number>(),
+      scores: new Map<string, number>(),
       started: false,
       acceptingAnswers: false,
     };
@@ -143,6 +159,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       room.acceptingAnswers = true;
       room.currentQuestionIndex = 0;
       room.answers.clear();
+      room.scores.clear();
+      for (const playerId of room.players) {
+        room.scores.set(playerId, 0);
+      }
       this.server.to(roomId).emit('game:started', { totalQuestions: quizQuestions.length });
       this.emitCurrentQuestion(roomId);
     }
@@ -155,6 +175,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     room.answers.set(client.id, payload.data.answerIndex);
+    const question = quizQuestions[room.currentQuestionIndex];
+    if (payload.data.answerIndex === question.correctIndex) {
+      room.scores.set(client.id, (room.scores.get(client.id) ?? 0) + 1);
+    }
+
     this.server.to(payload.roomId).emit('game:answer-state', {
       answered: room.answers.size,
       players: room.players.size,
@@ -178,7 +203,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       room.answers.clear();
 
       if (room.currentQuestionIndex >= quizQuestions.length) {
-        this.server.to(roomId).emit('game:finished');
+        void this.finishGame(roomId, room);
         this.rooms.delete(roomId);
         return;
       }
@@ -222,6 +247,44 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     };
   }
 
+  private async finishGame(roomId: string, room: RoomState) {
+    const rankedPlayers = Array.from(room.players)
+      .map((socketId) => ({
+        socketId,
+        userId: this.server.sockets.sockets.get(socketId)?.data.userId as string | undefined,
+        score: room.scores.get(socketId) ?? 0,
+      }))
+      .filter((player): player is { socketId: string; userId: string; score: number } => Boolean(player.userId));
+
+    const [first, second] = rankedPlayers.sort((left, right) => right.score - left.score);
+    const hasOneVsOneWinner = rankedPlayers.length === 2 && first.score > second.score;
+
+    if (hasOneVsOneWinner) {
+      await this.statsService.recordOneVsOneResult(first.userId, second.userId);
+    }
+
+    this.server.to(roomId).emit('game:finished', {
+      winnerUserId: hasOneVsOneWinner ? first.userId : null,
+      scores: rankedPlayers.map(({ userId, score }) => ({ userId, score })),
+    });
+  }
+
+  private authenticateClient(client: Socket) {
+    const token = client.handshake.auth?.token;
+    if (typeof token !== 'string' || token.length === 0) {
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(token, {
+        secret: this.configService.get<string>('JWT_SECRET') ?? 'change-me-in-production',
+      });
+      client.data.userId = payload.sub;
+    } catch (error) {
+      this.logger.warn(`socket authentication failed: ${(error as Error).message}`);
+    }
+  }
+
   private removeClientFromRooms(client: Socket) {
     for (const roomId of client.rooms) {
       if (roomId !== client.id) {
@@ -239,6 +302,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     room.players.delete(clientId);
     room.ready.delete(clientId);
     room.answers.delete(clientId);
+    room.scores.delete(clientId);
 
     if (room.players.size === 0) {
       this.rooms.delete(roomId);

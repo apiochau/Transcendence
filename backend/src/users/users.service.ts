@@ -30,6 +30,29 @@ export class UsersService {
     });
   }
 
+  searchUsers(query: string, excludeUserId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        AND: [
+          { id: { not: excludeUserId } },
+          {
+            OR: [
+              { username: { contains: query, mode: 'insensitive' } },
+              { displayName: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+      },
+      take: 10,
+    });
+  }
+
   getPublicProfile(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
@@ -58,4 +81,5 @@ export class UsersService {
       },
     });
   }
+
 }

@@ -18,4 +18,37 @@ export class StatsService {
       },
     });
   }
+
+  async recordOneVsOneResult(winnerId: string, loserId: string) {
+    if (winnerId === loserId) {
+      return;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.userStats.upsert({
+        where: { userId: winnerId },
+        create: {
+          userId: winnerId,
+          gamesPlayed: 1,
+          wins: 1,
+        },
+        update: {
+          gamesPlayed: { increment: 1 },
+          wins: { increment: 1 },
+        },
+      }),
+      this.prisma.userStats.upsert({
+        where: { userId: loserId },
+        create: {
+          userId: loserId,
+          gamesPlayed: 1,
+          losses: 1,
+        },
+        update: {
+          gamesPlayed: { increment: 1 },
+          losses: { increment: 1 },
+        },
+      }),
+    ]);
+  }
 }

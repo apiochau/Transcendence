@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { IsString } from 'class-validator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -7,7 +7,7 @@ import { FriendsService } from './friends.service';
 
 class FriendRequestDto {
   @IsString()
-  addresseeId: string;
+  username: string;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -21,7 +21,18 @@ export class FriendsController {
   }
 
   @Post('requests')
-  request(@CurrentUser() user: AuthenticatedUser, @Body() dto: FriendRequestDto) {
-    return this.friendsService.request(user.userId, dto.addresseeId);
+  requestUsername(@CurrentUser() user: AuthenticatedUser, @Body() dto: FriendRequestDto) {
+    return this.friendsService.requestUsername(user.userId, dto.username);
+  }
+
+
+  @Patch(':id/accept')
+  accept(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.friendsService.accept(user.userId, id);
+  }
+  
+  @Delete(':id')
+  remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string) {
+    return this.friendsService.remove(user.userId, id);
   }
 }

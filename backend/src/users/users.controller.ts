@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards, Query } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../common/types/authenticated-user';
@@ -20,8 +20,15 @@ export class UsersController {
     return this.usersService.updateProfile(user.userId, dto);
   }
 
+
+  @Get('search')
+  search(@Query('q') q: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.searchUsers(q.trim(), user.userId);
+  }
+
   @Get(':id')
   getProfile(@Param('id') id: string) {
     return this.usersService.getPublicProfile(id);
   }
+
 }
