@@ -53,7 +53,8 @@ export class AnalyticsService
     const endDate = new Date();
     const startDate = new Date();
 
-    startDate.setDate(endDate.getDate() - days);
+    //startDate.setDate(endDate.getDate() - days);
+    startDate.setDate(endDate.getDate() - (days - 1));
 
     // Engaged session per day
     const rawEngaged = await this.prisma.suggestionHistory.findMany({
@@ -79,10 +80,16 @@ export class AnalyticsService
     }
 
     // 生成完整日期陣列
-    const allDates = [...Array(days + 1)].map((_, i) => {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      return d.toISOString().split('T')[0];
+    // const allDates = [...Array(days + 1)].map((_, i) => {
+    //   const d = new Date(startDate);
+    //   d.setDate(d.getDate() + i);
+    //   return d.toISOString().split('T')[0];
+    // });
+
+    const allDates = [...Array(days)].map((_, i) => {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    return d.toISOString().split('T')[0];
     });
 
     // 補齊每天的資料，即使沒有 session
