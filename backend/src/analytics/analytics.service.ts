@@ -30,13 +30,11 @@ export class AnalyticsService
 
         //Sessions completed
         this.prisma.gameSession.count({
-          where: {
-            finishedAt: { not: null },
-          },
-        }),
+          where: { finishedAt: { not: null },},
+          }),
 
           this.prisma.tournament.count(),
-        ]);
+      ]);
 
       return {
         totalUsers,
@@ -59,12 +57,7 @@ export class AnalyticsService
     // Engaged session per day
     const rawEngaged = await this.prisma.suggestionHistory.findMany({
       select: { sessionId: true, createdAt: true },
-      where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
+      where: { createdAt: { gte: startDate, lte: endDate,},},
     });
 
     const engagedMap = new Map<string, Set<string>>();
@@ -79,13 +72,6 @@ export class AnalyticsService
       engagedMap.get(date)!.add(row.sessionId);
     }
 
-    // 生成完整日期陣列
-    // const allDates = [...Array(days + 1)].map((_, i) => {
-    //   const d = new Date(startDate);
-    //   d.setDate(d.getDate() + i);
-    //   return d.toISOString().split('T')[0];
-    // });
-
     const allDates = [...Array(days)].map((_, i) => {
     const d = new Date(startDate);
     d.setDate(d.getDate() + i);
@@ -94,23 +80,13 @@ export class AnalyticsService
 
     // 補齊每天的資料，即使沒有 session
     const engagedPerDay = allDates.map(date => ({
-      date,
-      count: engagedMap.get(date)?.size ?? 0,
+      date, count: engagedMap.get(date)?.size ?? 0,
     }));
 
     const rawCompleted = await this.prisma.gameSession.findMany({
-      select: {
-        id: true,
-        finishedAt: true,
-      },
-      where: {
-        finishedAt: {
-          not: null,
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-    });
+      select: { id: true, finishedAt: true, },
+      where: { finishedAt: { not: null, gte: startDate, lte: endDate, },},
+      });
 
     const completedMap = new Map<string, Set<string>>();
 
@@ -125,10 +101,21 @@ export class AnalyticsService
     }
 
     const completedPerDay = allDates.map(date => ({
-      date,
-      count: completedMap.get(date)?.size ?? 0,
-    }));
+      date, count: completedMap.get(date)?.size ?? 0,
+      }));
 
     return {engagedPerDay, completedPerDay,};
+  }
+
+  async getSimilarityDistribution() 
+  {
+    const result = await this.prisma.suggestionHistory.groupBy({
+      by: ['bucket'],
+      _count: { bucket: true,},});
+
+    return result.map(item => ({
+      bucket: item.bucket,
+      count: item._count.bucket,
+      }));
   }
 }

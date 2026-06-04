@@ -28,7 +28,7 @@ export function GamesOverTimeChart({overTime,}: GamesOverTimeChartProps)
     return (
         <div className="card-surface p-6">
         <h3 className="mb-4 text-lg font-semibold">
-            Games Played Over Time (Last 7 Days)
+            Games Played Over Last 7 Days
         </h3>
 
         <ResponsiveContainer width="100%" height={300}>

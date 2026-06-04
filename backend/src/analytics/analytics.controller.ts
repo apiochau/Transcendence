@@ -14,8 +14,12 @@ export class AnalyticsController
 
   @Get('games-over-time')
   gamesOverTime(@Query('days') days?: string) {
-  return this.analyticsService.gamesOverTime(
-    Number(days) || 7, //若前端沒傳就預設7天
-  );
-}
+    return this.analyticsService.gamesOverTime(
+      Number(days) || 7, //若前端沒傳就預設7天
+      );
+  }
+  @Get('similarity-distribution')
+  getSimilarityDistribution() {
+    return this.analyticsService.getSimilarityDistribution();
+  };
 }
