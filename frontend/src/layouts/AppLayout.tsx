@@ -62,7 +62,7 @@ export function AppLayout() {
                   <button
                     type="button"
                     onClick={() => { navigate('/profile'); setMenuOpen(false);}}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-900 hover:text-white"
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
                     >
                       Mon profil
                     </button>
