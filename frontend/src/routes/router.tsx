@@ -10,6 +10,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MatchmakingPage } from '../pages/MatchmakingPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { RulesPage } from '../pages/RulesPage';
 import { SoloGamePage } from '../pages/SoloGamePage';
 import { TournamentsPage } from '../pages/TournamentsPage';
 import { UserProfilePage } from '../pages/UserProfilePage';
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: '/game/:roomId', element: <LiveGamePage /> },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/leaderboard', element: <LeaderboardPage /> },
+          { path: '/rules', element: <RulesPage /> },
           { path: '/tournaments', element: <TournamentsPage /> },
           { path: '/users/:id', element: <UserProfilePage /> },
         ],

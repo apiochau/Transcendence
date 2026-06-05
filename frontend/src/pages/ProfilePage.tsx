@@ -54,7 +54,7 @@ export function ProfilePage() {
 
   return (
     <section className="page-enter">
-      <h1 className="text-3xl font-bold">Profile</h1>
+      <h1 className="text-3xl font-bold">Profil</h1>
       <div className="card-surface mt-8 p-6">
         {/* Avatar */}
         <div className="flex items-center gap-5">
@@ -104,8 +104,8 @@ export function ProfilePage() {
               <p className="text-xs text-slate-500">Défaites</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">{profile.stats.rating}</p>
-              <p className="text-xs text-slate-500">Rating</p>
+              <p className="text-2xl font-bold">{profile.collectionValue}</p>
+              <p className="text-xs text-slate-500">Valeur collection</p>
             </div>
           </div>
         )}

@@ -539,7 +539,7 @@ export function LiveGamePage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Match en ligne</p>
-          <h1 className="mt-2 text-3xl font-bold">Word Heist Arena</h1>
+          <h1 className="mt-2 text-3xl font-bold">Lexmon</h1>
           <p className="mt-2 text-sm text-slate-500">Room: <span className="font-mono text-slate-300">{roomId}</span></p>
         </div>
         <div className="panel-surface px-4 py-3">

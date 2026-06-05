@@ -16,7 +16,7 @@ export function TournamentsPage() {
 
   return (
     <section className="page-enter">
-      <h1 className="text-3xl font-bold">Tournaments</h1>
+      <h1 className="text-3xl font-bold">Tournois</h1>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         {tournaments.map((tournament, index) => (
           <article key={tournament.id} className="card-surface stagger-item p-5" style={{ animationDelay: `${index * 70}ms` }}>
@@ -25,7 +25,7 @@ export function TournamentsPage() {
           </article>
         ))}
         {tournaments.length === 0 && (
-          <div className="card-surface soft-pop p-5 text-slate-600">No tournaments yet.</div>
+          <div className="card-surface soft-pop p-5 text-slate-600">Aucun tournoi pour le moment.</div>
         )}
       </div>
     </section>

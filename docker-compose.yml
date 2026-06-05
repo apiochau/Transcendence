@@ -1,18 +1,18 @@
 services:
   postgres:
     image: docker.io/library/postgres:16-alpine
-    container_name: transcendence-postgres
+    container_name: lexmon-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: transcendence
-      POSTGRES_USER: transcendence
-      POSTGRES_PASSWORD: transcendence
+      POSTGRES_DB: lexmon
+      POSTGRES_USER: lexmon
+      POSTGRES_PASSWORD: lexmon
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - lexmon-postgres-data:/var/lib/postgresql/data
     networks:
-      - transcendence
+      - lexmon
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U transcendence -d transcendence"]
+      test: ["CMD-SHELL", "pg_isready -U lexmon -d lexmon"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -20,12 +20,12 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: transcendence-backend
+    container_name: lexmon-backend
     restart: unless-stopped
     env_file:
       - ./backend/.env.example
     environment:
-      DATABASE_URL: postgresql://transcendence:transcendence@postgres:5432/transcendence?schema=public
+      DATABASE_URL: postgresql://lexmon:lexmon@postgres:5432/lexmon?schema=public
       JWT_SECRET: change-me-in-production
       CORS_ORIGIN: http://localhost:8080
     depends_on:
@@ -35,23 +35,23 @@ services:
     expose:
       - "3000"
     networks:
-      - transcendence
+      - lexmon
 
   frontend:
     build:
       context: ./frontend
-    container_name: transcendence-frontend
+    container_name: lexmon-frontend
     restart: unless-stopped
     depends_on:
       - backend
     expose:
       - "80"
     networks:
-      - transcendence
+      - lexmon
 
   nginx:
     image: docker.io/library/nginx:1.27-alpine
-    container_name: transcendence-nginx
+    container_name: lexmon-nginx
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -61,12 +61,12 @@ services:
       - frontend
       - backend
     networks:
-      - transcendence
+      - lexmon
 
 networks:
-  transcendence:
+  lexmon:
     driver: bridge
 
 volumes:
-  postgres-data:
+  lexmon-postgres-data:
   uploads-data:

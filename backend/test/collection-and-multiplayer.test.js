@@ -315,6 +315,24 @@ test('daily matchmaking is consumed once a match is created', async () => {
   await assert.rejects(() => service.join('daily-1', 'daily'), /Daily mode is already used today/);
 });
 
+test('daily matchmaking stays locked even when user already has a queued entry', async () => {
+  const usedDailyUsers = new Set(['daily-locked']);
+  const prisma = {
+    dailyMatchAttempt: {
+      findUnique: async ({ where }) => {
+        const { userId, dayKey } = where.userId_dayKey;
+        return usedDailyUsers.has(userId) ? { id: `${userId}:${dayKey}`, createdAt: new Date(), dayKey } : null;
+      },
+    },
+  };
+  const service = new MatchmakingService(prisma, { refundStake: async () => {} });
+
+  const queuedTraining = await service.join('daily-locked', 'training');
+
+  assert.equal(queuedTraining.status, 'queued');
+  await assert.rejects(() => service.join('daily-locked', 'daily'), /Daily mode is already used today/);
+});
+
 test('duel matchmaking pairs only same rarity and refunds queued stake on leave', async () => {
   const refundedStakeIds = [];
   const stakeByItemId = {

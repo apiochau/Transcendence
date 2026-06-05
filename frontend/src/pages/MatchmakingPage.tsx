@@ -83,7 +83,7 @@ export function MatchmakingPage() {
     () => collectionItems.find((item) => item.id === selectedStakeItemId) ?? selectedStakeSnapshot,
     [collectionItems, selectedStakeItemId, selectedStakeSnapshot],
   );
-  const canStartSelectedMode = selectedMode !== 'daily' || dailyStatus?.available !== false;
+  const canStartSelectedMode = selectedMode !== 'daily' || dailyStatus?.available === true;
 
   async function openMatch(match: MatchResult) {
     await apiClient.post('/matchmaking/consume');
@@ -122,6 +122,24 @@ export function MatchmakingPage() {
     });
   }
 
+  async function refreshQueueStatus() {
+    const { data } = await apiClient.get<MatchmakingResponse>('/matchmaking/status');
+    if (data.status === 'matched' && data.match) {
+      setMessage('Match trouve. Ouverture de la partie...');
+      await openMatch(data.match);
+      return;
+    }
+
+    if (data.status === 'queued' && data.entry) {
+      setQueued(true);
+      setSelectedMode(data.entry.mode);
+      setMessage(getQueuedMessage(data.entry.mode, data.entry.stakeWordText, data.entry.stakeRarity));
+      return;
+    }
+
+    setQueued(false);
+  }
+
   async function toggleQueue() {
     setError(null);
     setIsSubmitting(true);
@@ -131,6 +149,12 @@ export function MatchmakingPage() {
         await apiClient.delete('/matchmaking/queue');
         setQueued(false);
         setMessage('Recherche annulee.');
+        await refreshModeData(false);
+        return;
+      }
+
+      if (selectedMode === 'daily' && dailyStatus?.available !== true) {
+        setError('Daily deja joue aujourd hui.');
         await refreshModeData(false);
         return;
       }
@@ -166,7 +190,7 @@ export function MatchmakingPage() {
   }
 
   useEffect(() => {
-    refreshModeData().catch((caughtError) => {
+    Promise.all([refreshModeData(), refreshQueueStatus()]).catch((caughtError) => {
       setError(getApiErrorMessage(caughtError, 'Impossible de charger les modes de jeu.'));
     });
   }, []);

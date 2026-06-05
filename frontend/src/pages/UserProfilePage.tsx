@@ -63,8 +63,8 @@ export function UserProfilePage() {
                             <p className="text-xs text-slate-500">Défaites</p>
                         </div>
                         <div>
-                            <p className="text-2xl font-bold">{profile.stats.rating}</p>
-                            <p className="text-xs text-slate-500">Rating</p>
+                            <p className="text-2xl font-bold">{profile.collectionValue}</p>
+                            <p className="text-xs text-slate-500">Valeur collection</p>
                         </div>
                     </div>
                 )}

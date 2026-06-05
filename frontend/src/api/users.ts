@@ -8,11 +8,11 @@ export interface PublicProfile {
     displayName: string | null;
     avatarUrl: string | null;
     createdAt: string;
+    collectionValue: number;
     stats: {
         gamesPlayed: number;
         wins: number;
         losses: number;
-        rating: number;
     } | null;
 }
 

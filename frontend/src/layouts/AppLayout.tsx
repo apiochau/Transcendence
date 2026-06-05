@@ -3,13 +3,13 @@ import { useAuthStore } from '../store/auth.store';
 import { useEffect, useRef, useState } from 'react';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/dashboard', label: 'Accueil' },
   { to: '/matchmaking', label: 'Matchmaking' },
   { to: '/solo', label: 'Partie solo' },
   { to: '/collection', label: 'Collection' },
-  { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/tournaments', label: 'Tournaments' },
-  //{ to: '/profile', label: 'Profile' },
+  { to: '/leaderboard', label: 'Classement' },
+  { to: '/rules', label: 'Regles' },
+  { to: '/tournaments', label: 'Tournois' },
 ];
 
 export function AppLayout() {
@@ -33,7 +33,7 @@ export function AppLayout() {
     <div className="min-h-screen bg-panel text-ink">
       <header className="sticky top-0 z-20 border-b border-slate-700 bg-slate-950/95 text-ink shadow-[0_10px_30px_rgb(0_0_0_/_0.28)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <NavLink to="/dashboard" className="text-lg font-semibold transition hover:text-accent">Word Heist Arena</NavLink>
+          <NavLink to="/dashboard" className="text-lg font-semibold transition hover:text-accent">Lexmon</NavLink>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
               <NavLink
@@ -55,7 +55,7 @@ export function AppLayout() {
               onClick={() => setMenuOpen((prev) => !prev)}
               className="motion-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium"
               >
-                {user?.username ?? 'Account'} ▾
+                {user?.username ?? 'Compte'} ▾
               </button>
 
               {menuOpen && (

@@ -46,13 +46,13 @@ export class MatchmakingService {
       return { status: 'matched' as const, match: existingMatch };
     }
 
+    if (mode === 'daily') {
+      await this.assertDailyAvailable(userId);
+    }
+
     const existingEntry = this.findQueuedEntry(userId);
     if (existingEntry) {
       return { status: 'queued' as const, entry: existingEntry };
-    }
-
-    if (mode === 'daily') {
-      await this.assertDailyAvailable(userId);
     }
 
     const stakeEntry = mode === 'duel'
