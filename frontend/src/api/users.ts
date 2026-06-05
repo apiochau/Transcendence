@@ -14,6 +14,7 @@ export interface PublicProfile {
         wins: number;
         losses: number;
     } | null;
+    isOnline?: boolean;
 }
 
 export function getMyProfile() {

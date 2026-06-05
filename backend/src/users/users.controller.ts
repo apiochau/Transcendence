@@ -10,11 +10,15 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../common/types/authenticated-user';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersService } from './users.service';
+import { RealtimeGateway } from '../websocket/websocket.gateway';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly gateway: RealtimeGateway,
+  ) {}
 
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
@@ -53,7 +57,8 @@ export class UsersController {
   }
   
   @Get(':id')
-  getProfile(@Param('id') id: string) {
-    return this.usersService.getPublicProfile(id);
+  async getProfile(@Param('id') id: string) {
+    const profile = await this.usersService.getPublicProfile(id);
+    return { ...profile, isOnline: this.gateway.isOnline(id) };
   }
 }

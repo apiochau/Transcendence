@@ -47,7 +47,14 @@ export function UserProfilePage() {
                             </div>
                     )}
                     <div>
-                        <p className="text-xl font-bold">{profile?.displayName ?? profile?.username}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xl font-bold">{profile?.displayName ?? profile?.username}</p>
+                            {profile && (
+                                profile?.isOnline
+                                ? <span className="h-2.5 w-2.5 rounded-full bg-green-500" title="En ligne" />
+                                : <span className="h-2.5 w-2.5 rounded-full bg-slate-300" title="Hors ligne" />
+                            )}
+                        </div>
                         <p className="text-sm text-slate-500">@{profile?.username}</p>
                     </div>
                 </div>
