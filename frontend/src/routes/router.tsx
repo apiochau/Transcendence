@@ -12,6 +12,7 @@ import { ProfilePage } from '../pages/ProfilePage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { SoloGamePage } from '../pages/SoloGamePage';
 import { TournamentsPage } from '../pages/TournamentsPage';
+import { UserProfilePage } from '../pages/UserProfilePage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: '/profile', element: <ProfilePage /> },
           { path: '/leaderboard', element: <LeaderboardPage /> },
           { path: '/tournaments', element: <TournamentsPage /> },
+          { path: '/users/:id', element: <UserProfilePage /> },
         ],
       },
     ],

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
+import { useNavigate } from 'react-router-dom'
 
 interface LeaderboardRow {
   id: string;
@@ -7,6 +8,7 @@ interface LeaderboardRow {
   wins: number;
   gamesPlayed: number;
   user: {
+    id: string;
     username: string;
     displayName: string | null;
   };
@@ -14,6 +16,7 @@ interface LeaderboardRow {
 
 export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     apiClient.get<LeaderboardRow[]>('/stats/leaderboard').then((response) => setRows(response.data));
@@ -38,6 +41,16 @@ export function LeaderboardPage() {
           <tbody>
             {rows.map((row, index) => (
               <tr key={row.id} className="stagger-item border-t border-slate-100 transition hover:bg-slate-100" style={{ animationDelay: `${index * 55}ms` }}>
+                <td className="px-4 py-3 font-medium">
+              <button
+                type="button"
+                onClick={() => navigate(`/users/${row.user.id}`)}
+                className="hover:text-accent hover:underline"  
+                >
+                  {row.user.displayName ?? row.user.username}
+                </button>
+                </td>
+                <td className="px-4 py-3">{row.rating}</td>
                 <td className="px-4 py-3 font-black text-accent">{index + 1}</td>
                 <td className="px-4 py-3 font-medium">{row.user.displayName ?? row.user.username}</td>
                 <td className="px-4 py-3 font-black">{row.collectionValue}</td>
