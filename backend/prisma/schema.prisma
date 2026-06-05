@@ -46,6 +46,9 @@ model User {
   stats             UserStats?
   notifications     Notification[]
   tournamentEntries TournamentEntry[]
+  wordCollection    WordCollectionItem[]
+  dailyMatchAttempts DailyMatchAttempt[]
+  wordStakeLocks     WordStakeLock[]
 }
 
 model Friendship {
@@ -126,10 +129,56 @@ model Word {
   normalizedText    String              @unique
   rarity            Int                 @default(50)
   value             Int                 @default(1)
+  rarityLabel       String              @default("common")
   category          String?
   embedding         Json
   secretSessions    GameSession[]       @relation("SecretWordSessions")
   suggestionHistory SuggestionHistory[]
+  collectionItems   WordCollectionItem[]
+  stakeLocks        WordStakeLock[]
+}
+
+model WordCollectionItem {
+  id          String   @id @default(uuid())
+  userId      String
+  wordId      String
+  quantity    Int      @default(1)
+  firstWonAt  DateTime @default(now())
+  lastWonAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word        Word     @relation(fields: [wordId], references: [id])
+
+  @@unique([userId, wordId])
+  @@index([userId])
+}
+
+model DailyMatchAttempt {
+  id        String   @id @default(uuid())
+  userId    String
+  dayKey    String
+  roomId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([dayKey])
+}
+
+model WordStakeLock {
+  id        String    @id @default(uuid())
+  userId    String
+  wordId    String
+  rarity    String
+  roomId    String?
+  status    String    @default("QUEUED")
+  createdAt DateTime  @default(now())
+  settledAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  word      Word      @relation(fields: [wordId], references: [id])
+
+  @@index([userId, status])
+  @@index([rarity, status])
+  @@index([roomId])
 }
 
 model GameSession {

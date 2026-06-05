@@ -6,6 +6,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/matchmaking', label: 'Matchmaking' },
   { to: '/solo', label: 'Partie solo' },
+  { to: '/collection', label: 'Collection' },
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/tournaments', label: 'Tournaments' },
   //{ to: '/profile', label: 'Profile' },
