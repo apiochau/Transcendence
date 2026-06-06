@@ -1,4 +1,10 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body, Controller, Get, Param, Patch,
+  Post, UploadedFile, UseGuards, UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../common/types/authenticated-user';
@@ -20,6 +26,32 @@ export class UsersController {
     return this.usersService.updateProfile(user.userId, dto);
   }
 
+  @Post('me/avatar')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (_req, file, cb) => {
+          const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `${uniqueName}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 2 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        const ext = extname(file.originalname).toLowerCase();
+        cb(null, allowed.includes(ext));
+      },
+    }),
+  )
+  uploadAvatar(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    return this.usersService.updateProfile(user.userId, { avatarUrl });
+  }
+  
   @Get(':id')
   getProfile(@Param('id') id: string) {
     return this.usersService.getPublicProfile(id);

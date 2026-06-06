@@ -1,26 +1,46 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
+import { useEffect, useRef, useState } from 'react';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/dashboard', label: 'Accueil' },
   { to: '/matchmaking', label: 'Matchmaking' },
   { to: '/solo', label: 'Partie solo' },
-  { to: '/leaderboard', label: 'Leaderboard' },
-  { to: '/tournaments', label: 'Tournaments' },
+//<<<<<<< HEAD
+ // { to: '/leaderboard', label: 'Leaderboard' },
+  //{ to: '/tournaments', label: 'Tournaments' },
   { to: '/profile', label: 'Profile' },
   { to: '/analytics', label: 'Analytics' },
+//=======
+  { to: '/collection', label: 'Collection' },
+  { to: '/leaderboard', label: 'Classement' },
+  { to: '/rules', label: 'Regles' },
+  { to: '/tournaments', label: 'Tournois' },
+//>>>>>>> origin/DEV
 ];
 
 export function AppLayout() {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen bg-panel text-ink">
       <header className="sticky top-0 z-20 border-b border-slate-700 bg-slate-950/95 text-ink shadow-[0_10px_30px_rgb(0_0_0_/_0.28)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <NavLink to="/dashboard" className="text-lg font-semibold transition hover:text-accent">Word Heist Arena</NavLink>
+          <NavLink to="/dashboard" className="text-lg font-semibold transition hover:text-accent">Lexmon</NavLink>
           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
             {navItems.map((item) => (
               <NavLink
@@ -36,16 +56,34 @@ export function AppLayout() {
               </NavLink>
             ))}
           </nav>
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              navigate('/login');
-            }}
-            className="motion-button ghost-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium"
-          >
-            {user?.username ?? 'Logout'}
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              className="motion-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium"
+              >
+                {user?.username ?? 'Compte'} ▾
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-44 rounded-md border border-slate-700 bg-slate-900 py-1 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => { navigate('/profile'); setMenuOpen(false);}}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                    >
+                      Mon profil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { logout(); navigate('/login'); setMenuOpen(false); }}
+                      className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                      >
+                        Déconnexion
+                      </button>
+                    </div>
+              )}
+          </div>
         </div>
       </header>
       <main className="page-enter mx-auto max-w-6xl px-4 py-8">

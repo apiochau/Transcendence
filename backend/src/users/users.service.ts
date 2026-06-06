@@ -30,8 +30,8 @@ export class UsersService {
     });
   }
 
-  getPublicProfile(id: string) {
-    return this.prisma.user.findUnique({
+  async getPublicProfile(id: string) {
+    const profile = await this.prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -43,6 +43,23 @@ export class UsersService {
         stats: true,
       },
     });
+
+    if (!profile) {
+      return null;
+    }
+
+    const collectionItems = await this.prisma.wordCollectionItem.findMany({
+      where: { userId: id },
+      select: {
+        quantity: true,
+        word: { select: { value: true } },
+      },
+    });
+
+    return {
+      ...profile,
+      collectionValue: collectionItems.reduce((total, item) => total + item.quantity * item.word.value, 0),
+    };
   }
 
   updateProfile(id: string, dto: UpdateProfileDto) {

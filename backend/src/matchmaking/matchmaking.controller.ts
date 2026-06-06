@@ -1,8 +1,13 @@
-import { Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthenticatedUser } from '../common/types/authenticated-user';
-import { MatchmakingService } from './matchmaking.service';
+import { MatchmakingMode, MatchmakingService } from './matchmaking.service';
+
+interface JoinMatchmakingBody {
+  mode?: MatchmakingMode;
+  stakeCollectionItemId?: string;
+}
 
 @UseGuards(JwtAuthGuard)
 @Controller('matchmaking')
@@ -19,9 +24,14 @@ export class MatchmakingController {
     return this.matchmakingService.status(user.userId);
   }
 
+  @Get('daily/status')
+  dailyStatus(@CurrentUser() user: AuthenticatedUser) {
+    return this.matchmakingService.dailyStatus(user.userId);
+  }
+
   @Post('queue')
-  join(@CurrentUser() user: AuthenticatedUser) {
-    return this.matchmakingService.join(user.userId);
+  join(@CurrentUser() user: AuthenticatedUser, @Body() body: JoinMatchmakingBody) {
+    return this.matchmakingService.join(user.userId, body.mode ?? 'training', body.stakeCollectionItemId);
   }
 
   @Post('consume')

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AppLayout } from '../layouts/AppLayout';
+import { CollectionPage } from '../pages/CollectionPage';
 import { DashboardPage } from '../pages/DashboardPage';
 import { LandingPage } from '../pages/LandingPage';
 import { LeaderboardPage } from '../pages/LeaderboardPage';
@@ -9,9 +10,14 @@ import { LoginPage } from '../pages/LoginPage';
 import { MatchmakingPage } from '../pages/MatchmakingPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { RulesPage } from '../pages/RulesPage';
 import { SoloGamePage } from '../pages/SoloGamePage';
 import { TournamentsPage } from '../pages/TournamentsPage';
+//<<<<<<< HEAD
 import { AnalyticsPage } from '../pages/AnalyticsPage';
+//=======
+import { UserProfilePage } from '../pages/UserProfilePage';
+//>>>>>>> origin/DEV
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -26,11 +32,14 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/matchmaking', element: <MatchmakingPage /> },
           { path: '/solo', element: <SoloGamePage /> },
+          { path: '/collection', element: <CollectionPage /> },
           { path: '/game/:roomId', element: <LiveGamePage /> },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/leaderboard', element: <LeaderboardPage /> },
+          { path: '/rules', element: <RulesPage /> },
           { path: '/tournaments', element: <TournamentsPage /> },
           { path: '/analytics', element: <AnalyticsPage /> },
+          { path: '/users/:id', element: <UserProfilePage /> },
         ],
       },
     ],
