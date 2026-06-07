@@ -17,6 +17,7 @@ import { SimilarityBucket } from '../game/types/suggestion.types';
 import { LocalWord, WordService } from '../game/word.service';
 import { MatchmakingMode, MatchmakingService } from '../matchmaking/matchmaking.service';
 import { StatsService } from '../stats/stats.service';
+import { PrismaService } from '../prisma.service';
 
 interface JoinRoomPayload {
   roomId: string;
@@ -112,6 +113,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly similarityService: SimilarityService,
     private readonly collectionService: CollectionService,
     private readonly matchmakingService: MatchmakingService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @WebSocketServer()
@@ -634,6 +636,15 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       } catch (error) {
         this.logger.warn(`failed to record 1v1 result: ${(error as Error).message}`);
       }
+    }
+
+    try {
+      await this.prisma.game.updateMany({
+        where: { roomId, status: 'ACTIVE' },
+        data: { status: 'FINISHED', winnerId: winnerUserId },
+      });
+    } catch (error) {
+      this.logger.warn(`failed to update game record: ${(error as Error).message}`);
     }
   }
 

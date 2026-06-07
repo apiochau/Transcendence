@@ -61,4 +61,9 @@ export class UsersController {
     const profile = await this.usersService.getPublicProfile(id);
     return { ...profile, isOnline: this.gateway.isOnline(id) };
   }
+
+  @Get(':id/games')
+  async getMatchHistory(@Param('id') id: string) {
+    return this.usersService.getMatchHistory(id);
+  }
 }

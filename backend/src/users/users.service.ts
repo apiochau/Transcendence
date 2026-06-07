@@ -75,4 +75,25 @@ export class UsersService {
       },
     });
   }
+
+  async getMatchHistory(userId: string) {
+    const games = await this.prisma.game.findMany({
+      where: {
+        OR: [{ playerOneId: userId }, { playerTwoId: userId }],
+        status: 'FINISHED',
+      },
+      include: {
+        playerOne: { select: { id: true, username: true, displayName: true, avatarUrl: true }},
+        playerTwo: { select: { id: true, username: true, displayName: true, avatarUrl: true }},
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    return games.map((game) => ({
+      id: game.id,
+      createdAt: game.createdAt,
+      opponent: game.playerOneId === userId ? game.playerTwo : game.playerOne,
+      result: game.winnerId === userId ? 'win' : game.winnerId === null ? 'draw' : 'loss',
+    }));
+  }
 }

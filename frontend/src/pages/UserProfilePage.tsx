@@ -2,6 +2,7 @@ import {useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile, PublicProfile } from '../api/users';
 import { useAuthStore } from '../store/auth.store'
+import { MatchHistoryList } from '../components/MatchHistoryList';
 
 export function UserProfilePage() {
     const { id } = useParams<{ id: string }>();
@@ -75,6 +76,8 @@ export function UserProfilePage() {
                         </div>
                     </div>
                 )}
+
+                <MatchHistoryList userId={id ?? ''} />
                 
                 {!isOwnProfile && (
                     <button
