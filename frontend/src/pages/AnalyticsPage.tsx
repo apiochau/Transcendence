@@ -59,20 +59,16 @@ export function AnalyticsPage()
     //   }, []);
     
     //Load Game over time(last 7 days)
-    // useEffect(() => 
-    //   {
-    //     apiClient.get<OverTimeData>('/analytics/games-over-time', {
-    //       params: {
-    //         days: 7,},
-    //     })
-    //     .then((response) => setOverTime(response.data));
-    //   }, []);
-    useEffect(() => 
-      {
-        apiClient.get<OverTimeData>("/analytics/games-over-time", 
-          { params: {startDate, endDate,},})
+    {/* fetch API */}
+    useEffect(() => {
+      if (!startDate || !endDate) return;
+
+      apiClient
+        .get<OverTimeData>("/analytics/games-over-time", {
+          params: { startDate, endDate },
+        })
         .then((res) => setOverTime(res.data));
-      }, [startDate, endDate]);
+    }, [startDate, endDate]);
       
 
     //Load Similarity distribution
@@ -123,64 +119,70 @@ export function AnalyticsPage()
 
         {/* Analytics Charts Section */}
         <div className="mt-10">
-          <h2 className="text-lg font-semibold text-slate-600">
-            Analytics Charts
-          </h2>
+        <h2 className="mb-6 text-lg font-semibold text-slate-600">
+          Analytics Charts
+        </h2>
 
-        {/* Date Range Filters */}
-        <div className="flex gap-3 items-end mt-4">
-        <div className="flex flex-col">
-          <label className="text-xs text-gray-400">Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="bg-slate-800 text-white px-2 py-1 rounded"
-          />
+      {/* Games Over Time Chart */}
+      <div className="card-surface p-4">
+
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">
+          Games Played Over Time
+        </h3>
+
+        <div className="flex gap-3 items-end">
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-400">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              max={endDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-slate-800 text-white px-2 py-1 rounded"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-400">
+              End Date
+            </label>
+    <input
+      type="date"
+      value={endDate}
+      min={startDate}
+      max={defaultEndDate}
+      onChange={(e) => setEndDate(e.target.value)}
+      className="bg-slate-800 text-white px-2 py-1 rounded"
+    />
+          </div>
+
+          <button
+            className="rounded bg-green-600 px-3 py-1 text-white hover:bg-green-700"
+            onClick={() => {
+              const today = new Date();
+              const last7 = new Date();
+              last7.setDate(today.getDate() - 6);
+
+              setStartDate(last7.toISOString().slice(0, 10));
+              setEndDate(today.toISOString().slice(0, 10));
+            }}
+          >
+            Last 7 Days
+          </button>
         </div>
-
-        <div className="flex flex-col">
-          <label className="text-xs text-gray-400">End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="bg-slate-800 text-white px-2 py-1 rounded"
-          />
-        </div>
-
-        <button
-          onClick={() => {
-            const today = new Date();
-
-            const end = today.toISOString().slice(0, 10);
-
-            const start = new Date();
-            start.setDate(today.getDate() - 6);
-
-            setStartDate(start.toISOString().slice(0, 10));
-            setEndDate(end);
-          }}
-          className="rounded bg-indigo-600 px-3 py-1 text-white hover:bg-indigo-700"
-        >
-          Last 7 Days
-        </button>
       </div>
 
-        {/* Games Over Time */}
-        <div className="mt-4">
-          {overTime ? (
-            <GamesOverTimeChart
-              overTime={overTime}
-              startDate={startDate}
-              endDate={endDate}
-            />
-          ) : (
-            <div className="card-surface h-[320px] flex items-center justify-center text-gray-500">
-              Loading chart...
-            </div>
-          )}
+      {overTime ? (
+        <GamesOverTimeChart overTime={overTime} />
+      ) : (
+        <div className="h-[320px] flex items-center justify-center text-gray-500">
+          Loading chart...
         </div>
+      )}
+    </div>
 
           {/* Donut Charts */}
           <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
