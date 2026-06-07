@@ -36,14 +36,22 @@ export function AnalyticsPage()
     //const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
     const { overview, lastUpdated } = useAnalyticsOverview(); // SMART POLLING OVERVIEW (handled by hook)
     const [overTime, setOverTime] = useState<OverTimeData | null>(null);
-    const [days, setDays] = useState(7);
-    const [startDate, setStartDate] = useState<string>("");
-    const [endDate, setEndDate] = useState<string>("");
+    //const [startDate, setStartDate] = useState<string>("");
+    //const [endDate, setEndDate] = useState<string>("");
     const [similarityDistribution, setSimilarityDistribution] = useState<SimilarityDistributionItem[]>([]);
     const [collectionRarity, setCollectionRarity] = useState<CollectionRarityItem[]>([]);
     const [winSpeedDistribution, setWinSpeedDistribution] = useState<WinSpeedItem[] | null>(null);
 
-    //Load Overview
+    const today = new Date();
+    const defaultEndDate = today.toISOString().slice(0, 10);
+    const defaultStartDate = new Date(
+      today.getTime() - 6 * 24 * 60 * 60 * 1000
+    )
+      .toISOString()
+      .slice(0, 10);
+    const [startDate, setStartDate] = useState<string>(defaultStartDate);
+    const [endDate, setEndDate] = useState<string>(defaultEndDate);
+        //Load Overview
     // useEffect(() => 
     //   {
     //     apiClient.get<AnalyticsOverview>('/analytics/overview')
@@ -121,25 +129,43 @@ export function AnalyticsPage()
 
         {/* Date Range Filters */}
         <div className="flex gap-3 items-end mt-4">
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-400">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-slate-800 text-white px-2 py-1 rounded"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-400">End Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-slate-800 text-white px-2 py-1 rounded"
-            />
-          </div>
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-400">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="bg-slate-800 text-white px-2 py-1 rounded"
+          />
         </div>
+
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-400">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="bg-slate-800 text-white px-2 py-1 rounded"
+          />
+        </div>
+
+        <button
+          onClick={() => {
+            const today = new Date();
+
+            const end = today.toISOString().slice(0, 10);
+
+            const start = new Date();
+            start.setDate(today.getDate() - 6);
+
+            setStartDate(start.toISOString().slice(0, 10));
+            setEndDate(end);
+          }}
+          className="rounded bg-indigo-600 px-3 py-1 text-white hover:bg-indigo-700"
+        >
+          Last 7 Days
+        </button>
+      </div>
 
         {/* Games Over Time */}
         <div className="mt-4">
