@@ -2,6 +2,7 @@ import {useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile, PublicProfile } from '../api/users';
 import { useAuthStore } from '../store/auth.store'
+import { MatchHistoryList } from '../components/MatchHistoryList';
 
 export function UserProfilePage() {
     const { id } = useParams<{ id: string }>();
@@ -47,7 +48,14 @@ export function UserProfilePage() {
                             </div>
                     )}
                     <div>
-                        <p className="text-xl font-bold">{profile?.displayName ?? profile?.username}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xl font-bold">{profile?.displayName ?? profile?.username}</p>
+                            {profile && (
+                                profile?.isOnline
+                                ? <span className="h-2.5 w-2.5 rounded-full bg-green-500" title="En ligne" />
+                                : <span className="h-2.5 w-2.5 rounded-full bg-slate-300" title="Hors ligne" />
+                            )}
+                        </div>
                         <p className="text-sm text-slate-500">@{profile?.username}</p>
                     </div>
                 </div>
@@ -68,6 +76,8 @@ export function UserProfilePage() {
                         </div>
                     </div>
                 )}
+
+                <MatchHistoryList userId={id ?? ''} />
                 
                 {!isOwnProfile && (
                     <button

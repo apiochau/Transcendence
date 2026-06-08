@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { getMyProfile, updateMyProfile, PublicProfile, uploadAvatar } from '../api/users';
 import { useAuthStore } from '../store/auth.store';
+import { MatchHistoryList } from '../components/MatchHistoryList';
 
 export function ProfilePage() {
   const { user, setSession, accessToken } = useAuthStore();
@@ -109,6 +110,8 @@ export function ProfilePage() {
             </div>
           </div>
         )}
+
+        <MatchHistoryList userId={user?.id ?? ''} />
 
         {!editing ? (
           <button
