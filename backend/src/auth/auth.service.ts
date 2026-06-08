@@ -2,8 +2,10 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
+import { RemoteOAuthProfile } from './oauth.types';
 import { RegisterDto } from './dto/register.dto';
 
 interface AuthUser {
@@ -50,6 +52,58 @@ export class AuthService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  async loginWithOAuth(profile: RemoteOAuthProfile) {
+    if (!profile.email || profile.email === 'undefined' || profile.email === 'null') {
+      throw new UnauthorizedException('OAuth provider did not return an email address');
+    }
+
+    const existingOAuthUser = await this.usersService.findByOAuth(profile.provider, profile.providerUserId);
+    if (existingOAuthUser) {
+      return this.buildAuthResponse(existingOAuthUser);
+    }
+
+    const existingEmailUser = await this.usersService.findByEmail(profile.email);
+    if (existingEmailUser) {
+      const linkedUser = await this.usersService.linkOAuthAccount(existingEmailUser.id, profile.provider, profile.providerUserId, {
+        displayName: existingEmailUser.displayName ?? profile.displayName,
+        avatarUrl: existingEmailUser.avatarUrl ?? profile.avatarUrl,
+      });
+      return this.buildAuthResponse(linkedUser);
+    }
+
+    const username = await this.createAvailableUsername(profile.username);
+    const user = await this.usersService.create({
+      email: profile.email,
+      username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      oauthProvider: profile.provider,
+      oauthId: profile.providerUserId,
+      passwordHash: await bcrypt.hash(randomUUID(), 12),
+    });
+
+    return this.buildAuthResponse(user);
+  }
+
+  private async createAvailableUsername(baseUsername: string) {
+    const cleanBase = baseUsername.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20) || 'player';
+    const existingUser = await this.usersService.findByUsername(cleanBase);
+    if (!existingUser) {
+      return cleanBase;
+    }
+
+    for (let index = 1; index <= 50; index += 1) {
+      const suffix = String(index);
+      const candidate = `${cleanBase.slice(0, 24 - suffix.length)}${suffix}`;
+      const existingCandidate = await this.usersService.findByUsername(candidate);
+      if (!existingCandidate) {
+        return candidate;
+      }
+    }
+
+    return `player${randomUUID().replace(/-/g, '').slice(0, 18)}`;
   }
 
   private async buildAuthResponse(user: AuthUser) {

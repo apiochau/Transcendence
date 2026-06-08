@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import { useNavigate } from 'react-router-dom'
+import { getApiErrorMessage } from '../api/error';
+import { useNavigate } from 'react-router-dom';
 
 interface LeaderboardRow {
   id: string;
@@ -16,10 +17,21 @@ interface LeaderboardRow {
 
 export function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    apiClient.get<LeaderboardRow[]>('/stats/leaderboard').then((response) => setRows(response.data));
+    apiClient
+      .get<LeaderboardRow[]>('/stats/leaderboard')
+      .then((response) => {
+        setRows(response.data);
+        setError('');
+      })
+      .catch((caughtError) => {
+        setError(getApiErrorMessage(caughtError, 'Impossible de charger le classement.'));
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -27,6 +39,11 @@ export function LeaderboardPage() {
       <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Classement</p>
       <h1 className="mt-2 text-3xl font-bold">Classement collection</h1>
       <p className="mt-2 text-sm text-slate-500">Les joueurs sont classes par valeur totale de mots collectes.</p>
+      {error && (
+        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {error}
+        </div>
+      )}
       <div className="card-surface mt-8 overflow-hidden">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-100 text-slate-600">
@@ -56,9 +73,14 @@ export function LeaderboardPage() {
                 <td className="px-4 py-3">{row.gamesPlayed}</td>
               </tr>
             ))}
-            {rows.length === 0 && (
+            {isLoading && (
               <tr>
-                <td className="px-4 py-6 text-slate-500" colSpan={5}>Aucune collection pour le moment.</td>
+                <td className="px-4 py-6 text-slate-500" colSpan={5}>Chargement du classement...</td>
+              </tr>
+            )}
+            {!isLoading && !error && rows.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-slate-500" colSpan={5}>Aucun joueur pour le moment.</td>
               </tr>
             )}
           </tbody>

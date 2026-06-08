@@ -24,9 +24,33 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  findByUsername(username: string) {
+    return this.prisma.user.findUnique({ where: { username } });
+  }
+
+  findByOAuth(provider: string, oauthId: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        oauthProvider: provider,
+        oauthId,
+      },
+    });
+  }
+
   findByEmailOrUsername(email: string, username: string) {
     return this.prisma.user.findFirst({
       where: { OR: [{ email }, { username }] },
+    });
+  }
+
+  linkOAuthAccount(id: string, provider: string, oauthId: string, data: Pick<Prisma.UserUpdateInput, 'avatarUrl' | 'displayName'> = {}) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...data,
+        oauthProvider: provider,
+        oauthId,
+      },
     });
   }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 const RARITY_SORT_ORDER: Record<string, number> = {
@@ -10,8 +10,14 @@ const RARITY_SORT_ORDER: Record<string, number> = {
 };
 
 @Injectable()
-export class CollectionService {
+export class CollectionService implements OnModuleInit {
+  private readonly logger = new Logger(CollectionService.name);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  async onModuleInit() {
+    await this.refundOpenStakeLocks();
+  }
 
   async awardWord(userId: string, wordId: string) {
     return this.prisma.wordCollectionItem.upsert({
@@ -112,6 +118,25 @@ export class CollectionService {
         },
       }),
     ]);
+  }
+
+  private async refundOpenStakeLocks() {
+    const openStakeLocks = await this.prisma.wordStakeLock.findMany({
+      where: {
+        status: { in: ['QUEUED', 'MATCHED'] },
+      },
+      select: { id: true },
+    });
+
+    if (openStakeLocks.length === 0) {
+      return;
+    }
+
+    for (const stakeLock of openStakeLocks) {
+      await this.refundStake(stakeLock.id);
+    }
+
+    this.logger.warn(`Refunded ${openStakeLocks.length} open duel stake(s) after startup reconciliation.`);
   }
 
   async settleDuelStakes(winnerUserId: string, stakeLockIds: string[]) {
