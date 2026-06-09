@@ -107,6 +107,8 @@ export const SEMANTIC_EXPANSION_GROUPS: SemanticExpansionGroup[] = [
       'internet', 'navigateur', 'site', 'serveur', 'client', 'reseau', 'code', 'developpeur',
       'terminal', 'console', 'processeur', 'memoire', 'disque', 'carte graphique', 'webcam',
       'imprimante', 'bureau', 'informatique', 'algorithme', 'base de donnees', 'donnee',
+      'developpement', 'developement', 'programmation', 'framework', 'architecture', 'debug',
+      'compilation', 'typescript', 'javascript', 'cryptographie', 'chiffrement',
     ],
   },
   {
@@ -117,6 +119,15 @@ export const SEMANTIC_EXPANSION_GROUPS: SemanticExpansionGroup[] = [
       'volt', 'watt', 'batterie', 'pile', 'chargeur', 'cable', 'fil', 'energie', 'centrale',
       'transformateur', 'compteur', 'disjoncteur', 'panne', 'lumiere', 'electrique', 'electron',
       'charge', 'alimentation',
+    ],
+  },
+  {
+    categories: ['abstrait', 'philosophie', 'idee'],
+    vector: { abstract: 1, education: 0.34, learning: 0.32, institution: 0.18, person: 0.1 },
+    words: [
+      'idee', 'concept', 'pensee', 'raisonnement', 'logique', 'theorie', 'hypothese',
+      'philosophie', 'metaphysique', 'existence', 'conscience', 'verite', 'morale',
+      'ethique', 'sagesse', 'paradoxe', 'abstraction', 'intuition',
     ],
   },
   {
@@ -158,6 +169,14 @@ export const SEMANTIC_EXPANSION_GROUPS: SemanticExpansionGroup[] = [
       'tomate', 'pomme de terre', 'oignon', 'ail', 'beurre', 'lait', 'oeuf', 'farine', 'sucre',
       'sel', 'poivre', 'restaurant', 'repas', 'dejeuner', 'diner', 'petit dejeuner', 'assiette',
       'fourchette', 'couteau', 'cuillere',
+    ],
+  },
+  {
+    categories: ['eau', 'nature', 'boisson'],
+    vector: { water: 1, nature: 0.62, food: 0.32, health: 0.24, home: 0.08 },
+    words: [
+      'eau', 'boire', 'boisson', 'verre', 'robinet', 'source', 'riviere', 'lac', 'pluie',
+      'goutte', 'liquide', 'fontaine', 'hydratation', 'mineral', 'bouteille',
     ],
   },
   {

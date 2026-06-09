@@ -19,6 +19,6 @@ import { WordService } from './word.service';
     EmbeddingService,
     CategoryFallbackService,
   ],
-  exports: [GameService],
+  exports: [GameService, WordService, SimilarityService],
 })
 export class GameModule {}

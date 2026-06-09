@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { getApiErrorMessage } from '../api/error';
 
@@ -84,7 +85,7 @@ export function FriendsPage() {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    if (searchQuery.trim().length === 0) {
+    if (searchQuery.trim().length < 3) {
       setSearchResults([]);
       setSearching(false);
       return;
@@ -152,7 +153,6 @@ export function FriendsPage() {
       <h1 className="text-3xl font-bold">Amis</h1>
       <p className="mt-2 text-slate-600">Cherche un joueur avec son pseudo pour l ajouter en ami.</p>
 
-      {/* Search bar */}
       <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <label className="text-sm font-semibold text-slate-600">Ajouter un ami</label>
         <input
@@ -165,7 +165,7 @@ export function FriendsPage() {
         {searchError && <p className="mt-2 text-xs text-red-600">{searchError}</p>}
         {actionError && <p className="mt-2 text-xs text-red-600">{actionError}</p>}
 
-        {searchQuery.trim().length > 0 && (
+        {searchQuery.trim().length > 3 && (
           <div className="mt-3 space-y-2">
             {searching && <p className="text-sm text-slate-500">Recherche...</p>}
             {!searching && searchResults.length === 0 && searchQuery.trim().length > 0 && (
@@ -178,13 +178,16 @@ export function FriendsPage() {
               const justSent = requestSent.has(user.username);
               return (
                 <div key={user.id} className="flex items-center justify-between rounded-md bg-slate-50 px-4 py-3">
-                  <div className="flex items-center gap-3">
+                  <Link
+                    to={`/profile/${user.id}`}
+                    className="flex items-center gap-3 hover:opacity-80"
+                  >
                     <Avatar user={{ ...user, displayName: user.displayName }} />
                     <div>
                       <p className="text-sm font-semibold">{user.displayName ?? user.username}</p>
                       <p className="text-xs text-slate-500">@{user.username}</p>
                     </div>
-                  </div>
+                  </Link>
                   {alreadyFriend ? (
                     <span className="text-xs font-medium text-slate-400">Deja ami / en attente</span>
                   ) : justSent ? (
@@ -207,7 +210,6 @@ export function FriendsPage() {
 
       {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      {/* Tabs */}
       <div className="mt-8 flex gap-1 rounded-lg bg-slate-100 p-1">
         {tabs.map((t) => (
           <button
@@ -230,7 +232,6 @@ export function FriendsPage() {
         ))}
       </div>
 
-      {/* List */}
       <div className="mt-4 space-y-2">
         {loading ? (
           <p className="py-6 text-center text-sm text-slate-500">Chargement...</p>
@@ -246,13 +247,16 @@ export function FriendsPage() {
               key={row.id}
               className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm"
             >
-              <div className="flex items-center gap-3">
+              <Link
+                to={`/profile/${row.friend.id}`}
+                className="flex items-center gap-3 hover:opacity-80"
+              >
                 <Avatar user={row.friend} />
                 <div>
                   <p className="text-sm font-semibold">{row.friend.displayName ?? row.friend.username}</p>
                   <p className="text-xs text-slate-500">@{row.friend.username}</p>
                 </div>
-              </div>
+              </Link>
               <div className="flex items-center gap-2">
                 {tab === 'pending' && (
                   <button

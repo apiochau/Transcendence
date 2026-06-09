@@ -249,7 +249,7 @@ export function SoloGamePage() {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Word Heist Arena</h1>
+          <h1 className="text-3xl font-bold">Lexmon</h1>
           <p className="mt-2 text-slate-600">Choisis parmi les suggestions, puis tente la reponse finale.</p>
         </div>
         <button

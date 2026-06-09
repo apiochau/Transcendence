@@ -24,13 +24,37 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  findByUsername(username: string) {
+    return this.prisma.user.findUnique({ where: { username } });
+  }
+
+  findByOAuth(provider: string, oauthId: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        oauthProvider: provider,
+        oauthId,
+      },
+    });
+  }
+
   findByEmailOrUsername(email: string, username: string) {
     return this.prisma.user.findFirst({
       where: { OR: [{ email }, { username }] },
     });
   }
 
-  searchUsers(query: string, excludeUserId: string) {
+  linkOAuthAccount(id: string, provider: string, oauthId: string, data: Pick<Prisma.UserUpdateInput, 'avatarUrl' | 'displayName'> = {}) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...data,
+        oauthProvider: provider,
+        oauthId,
+      },
+    });
+  }
+
+    searchUsers(query: string, excludeUserId: string) {
     return this.prisma.user.findMany({
       where: {
         AND: [
@@ -53,8 +77,8 @@ export class UsersService {
     });
   }
 
-  getPublicProfile(id: string) {
-    return this.prisma.user.findUnique({
+  async getPublicProfile(id: string) {
+    const profile = await this.prisma.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -66,6 +90,23 @@ export class UsersService {
         stats: true,
       },
     });
+
+    if (!profile) {
+      return null;
+    }
+
+    const collectionItems = await this.prisma.wordCollectionItem.findMany({
+      where: { userId: id },
+      select: {
+        quantity: true,
+        word: { select: { value: true } },
+      },
+    });
+
+    return {
+      ...profile,
+      collectionValue: collectionItems.reduce((total, item) => total + item.quantity * item.word.value, 0),
+    };
   }
 
   updateProfile(id: string, dto: UpdateProfileDto) {
@@ -82,4 +123,24 @@ export class UsersService {
     });
   }
 
+  async getMatchHistory(userId: string) {
+    const games = await this.prisma.game.findMany({
+      where: {
+        OR: [{ playerOneId: userId }, { playerTwoId: userId }],
+        status: 'FINISHED',
+      },
+      include: {
+        playerOne: { select: { id: true, username: true, displayName: true, avatarUrl: true }},
+        playerTwo: { select: { id: true, username: true, displayName: true, avatarUrl: true }},
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    return games.map((game) => ({
+      id: game.id,
+      createdAt: game.createdAt,
+      opponent: game.playerOneId === userId ? game.playerTwo : game.playerOne,
+      result: game.winnerId === userId ? 'win' : game.winnerId === null ? 'draw' : 'loss',
+    }));
+  }
 }

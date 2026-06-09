@@ -84,6 +84,29 @@ textarea::placeholder {
   color: #cbd5e1;
 }
 
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+  scroll-behavior: smooth;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(203 213 225);
+  border-radius: 3px;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184);
+}
+
 .text-amber-900,
 .text-green-700,
 .text-green-800,
@@ -285,7 +308,7 @@ textarea::placeholder {
     z-index: 50;
     overflow: hidden;
     background: radial-gradient(circle at 50% 35%, rgb(20 184 166 / 0.28), transparent 24rem);
-    animation: victory-fade 2.8s ease both;
+    animation: victory-fade 5.8s ease both;
   }
 
   .victory-banner {
@@ -299,7 +322,7 @@ textarea::placeholder {
     box-shadow: 0 24px 70px rgb(20 184 166 / 0.22);
     padding: 1rem 1.4rem;
     text-align: center;
-    animation: victory-pop 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: victory-pop 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .confetti-piece {
@@ -312,7 +335,29 @@ textarea::placeholder {
     background: var(--confetti-color);
     opacity: 0;
     transform: rotate(var(--confetti-rotate));
-    animation: confetti-fall 2.6s cubic-bezier(0.18, 0.85, 0.38, 1) var(--confetti-delay) both;
+    animation: confetti-fall 5.2s cubic-bezier(0.18, 0.85, 0.38, 1) var(--confetti-delay) both;
+  }
+
+  .collection-reward {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+  }
+
+  .collection-reward-card {
+    min-width: min(22rem, calc(100vw - 2rem));
+    border-radius: 0.5rem;
+    border: 1px solid rgb(251 191 36 / 0.72);
+    background:
+      linear-gradient(145deg, rgb(120 53 15 / 0.95), rgb(15 23 42 / 0.98)),
+      #111827;
+    box-shadow: 0 28px 80px rgb(245 158 11 / 0.24), 0 0 0 1px rgb(251 191 36 / 0.12);
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    animation: collection-reward-flight 3.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
@@ -426,6 +471,26 @@ textarea::placeholder {
   100% {
     opacity: 0;
     transform: translateY(110vh) translateX(var(--confetti-drift)) rotate(calc(var(--confetti-rotate) + 540deg));
+  }
+}
+
+@keyframes collection-reward-flight {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.82) rotate(-2deg);
+  }
+  18%,
+  52% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  72% {
+    opacity: 1;
+    transform: translateY(-18vh) translateX(24vw) scale(0.72) rotate(4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-42vh) translateX(42vw) scale(0.18) rotate(10deg);
   }
 }
 

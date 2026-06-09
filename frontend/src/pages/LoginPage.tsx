@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import { getApiErrorMessage } from '../api/error';
+import { OAuthButtons } from '../components/OAuthButtons';
 import { useAuthStore } from '../store/auth.store';
 
 export function LoginPage() {
@@ -33,10 +34,10 @@ export function LoginPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-panel px-4">
       <form onSubmit={onSubmit} className="card-surface page-enter w-full max-w-md p-6">
-        <h1 className="text-2xl font-bold">Login</h1>
+        <h1 className="text-2xl font-bold">Connexion</h1>
         <label className="mt-6 block text-sm font-medium">Email</label>
         <input name="email" type="email" required className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2" />
-        <label className="mt-4 block text-sm font-medium">Password</label>
+        <label className="mt-4 block text-sm font-medium">Mot de passe</label>
         <input name="password" type="password" required minLength={8} className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2" />
         {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
         <button
@@ -44,9 +45,10 @@ export function LoginPage() {
           disabled={isSubmitting}
           className="motion-button mt-6 w-full rounded-md bg-accent px-4 py-2 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
-          {isSubmitting ? 'Connexion...' : 'Sign in'}
+          {isSubmitting ? 'Connexion...' : 'Se connecter'}
         </button>
-        <p className="mt-4 text-sm text-slate-600">No account? <Link className="font-semibold text-accent transition hover:text-teal-300" to="/register">Register</Link></p>
+        <OAuthButtons label="Se connecter" />
+        <p className="mt-4 text-sm text-slate-600">Pas encore de compte ? <Link className="font-semibold text-accent transition hover:text-teal-300" to="/register">S'inscrire</Link></p>
       </form>
     </main>
   );

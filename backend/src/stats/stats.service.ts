@@ -9,14 +9,34 @@ export class StatsService {
     return this.prisma.userStats.findUnique({ where: { userId } });
   }
 
-  leaderboard() {
-    return this.prisma.userStats.findMany({
-      orderBy: [{ rating: 'desc' }, { wins: 'desc' }],
-      take: 50,
+  async leaderboard() {
+    const users = await this.prisma.user.findMany({
       include: {
-        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        stats: { select: { wins: true, gamesPlayed: true } },
+        wordCollection: {
+          where: { quantity: { gt: 0 } },
+          include: {
+            word: { select: { value: true } },
+          },
+        },
       },
     });
+
+    return users
+      .map((user) => ({
+        id: user.id,
+        collectionValue: user.wordCollection.reduce((total, item) => total + item.word.value * item.quantity, 0),
+        wins: user.stats?.wins ?? 0,
+        gamesPlayed: user.stats?.gamesPlayed ?? 0,
+        user: {
+          id: user.id,
+          username: user.username,
+          displayName: user.displayName,
+          avatarUrl: user.avatarUrl,
+        },
+      }))
+      .sort((left, right) => right.collectionValue - left.collectionValue || right.wins - left.wins)
+      .slice(0, 50);
   }
 
   async recordOneVsOneResult(winnerId: string, loserId: string) {
