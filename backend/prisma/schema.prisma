@@ -27,6 +27,12 @@ enum TournamentStatus {
   FINISHED
 }
 
+enum SentimentType {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
 model User {
   id                String            @id @default(uuid())
   email             String            @unique
@@ -49,6 +55,7 @@ model User {
   wordCollection    WordCollectionItem[]
   dailyMatchAttempts DailyMatchAttempt[]
   wordStakeLocks     WordStakeLock[]
+  feedbacks         Feedback[]
 }
 
 model Friendship {
@@ -193,6 +200,7 @@ model GameSession {
   finishedAt       DateTime?
   secretWord       Word                @relation("SecretWordSessions", fields: [secretWordId], references: [id])
   suggestionHistory SuggestionHistory[]
+  feedbacks        Feedback[]
 }
 
 model SuggestionHistory {
@@ -208,4 +216,27 @@ model SuggestionHistory {
 
   @@unique([sessionId, wordId])
   @@index([sessionId, createdAt])
+}
+
+model Feedback {
+  id         String   @id @default(uuid())
+
+  userId     String
+  sessionId  String
+
+  content    String
+
+  sentiment  SentimentType?
+  score      Float?
+
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionId])
+
+  @@index([userId])
+  @@index([sessionId])
 }

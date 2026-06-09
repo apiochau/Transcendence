@@ -10,7 +10,7 @@ import { WinSpeedBarChart } from '../components/analytics/WinSpeedBarChart';
 interface OverTimeData 
 {
   engagedPerDay: { date: string; count: number }[];
-  completedPerDay: { date: string; count: number }[];
+  engagedCompletedPerDay: { date: string; count: number }[];
 }
 
 interface SimilarityDistributionItem 
@@ -128,7 +128,7 @@ export function AnalyticsPage()
 
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">
-          Games Played Over Time
+          Engaged Games Played Over Time
         </h3>
 
         <div className="flex gap-3 items-end">
@@ -231,13 +231,13 @@ export function AnalyticsPage()
               )}
             </div>
 
-            {/* Win Speed Distribution */}
+            {/* Session Duration Distribution */}
             <div className="mt-6 card-surface p-3">
               <h3 className="mb-4 text-lg font-semibold">
-                Win Speed Distribution
+                Session Duration Distribution
               </h3>
               <p className="mb-4 text-sm text-gray-500">
-                Time from first suggestion to game finished.
+                Time from first suggestion click to session completion or abandon click.
               </p>
               {winSpeedDistribution === null ? (
                 <div className="h-[320px] flex items-center justify-center text-gray-500">

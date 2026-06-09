@@ -13,6 +13,8 @@ import {
   submitFinalAnswer,
 } from '../api/game';
 
+import { FeedbackModal } from '../components/FeedbackModal';
+
 const bucketLabel: Record<SimilarityBucket, string> = {
   hot: 'Chaud',
   warm: 'Tiede',
@@ -53,6 +55,9 @@ export function SoloGamePage() {
   const [error, setError] = useState<string | null>(null);
   const nextRoundTimeoutRef = useRef<number | null>(null);
   const countdownIntervalRef = useRef<number | null>(null);
+
+  const [showFeedback, setShowFeedback] = useState(false);//FEEDBACK
+  const [finishedSessionId, setFinishedSessionId] = useState<string | null>(null);//
 
   function clearRoundTimers() {
     if (nextRoundTimeoutRef.current !== null) {
@@ -102,6 +107,9 @@ export function SoloGamePage() {
     setRevealed({});
     setAnswer('');
     setRoundCooldown(0);
+
+    setShowFeedback(false);//FEEDBACK
+    setFinishedSessionId(null);//
 
     try {
       const session = await startSoloGame();
@@ -183,6 +191,9 @@ export function SoloGamePage() {
         setRoundCooldown(0);
         setFinalMessage('Bonne reponse.');
         setShowVictory(true);
+
+        setFinishedSessionId(sessionId);//FEEDBACK
+        setShowFeedback(true);//
       } else {
         setFinalMessage('Mauvaise reponse.');
       }
@@ -208,6 +219,10 @@ export function SoloGamePage() {
       setIsFinished(true);
       setRevealedSecret(result.secretWord);
       setFinalMessage('Partie abandonnee.');
+
+        
+      setFinishedSessionId(sessionId); //FEEDBACK
+      setShowFeedback(true);//
     } catch (caughtError) {
       setError(getApiErrorMessage(caughtError, 'Impossible d abandonner la partie.'));
     }
@@ -245,6 +260,14 @@ export function SoloGamePage() {
             />
           ))}
         </div>
+      )}
+
+      {/*FEEDBACK*/}
+      {showFeedback && finishedSessionId && (
+        <FeedbackModal
+          sessionId={finishedSessionId}
+          onClose={() => setShowFeedback(false)}
+        />
       )}
 
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

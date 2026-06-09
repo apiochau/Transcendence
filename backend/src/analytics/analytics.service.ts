@@ -58,98 +58,202 @@ export class AnalyticsService
 
 
 
-  async gamesOverTime() {
-    const endDate = new Date();
-    endDate.setHours(23, 59, 59, 999);
+  // async gamesOverTime() {
+  //   const endDate = new Date();
+  //   endDate.setHours(23, 59, 59, 999);
 
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 6);
-    startDate.setHours(0, 0, 0, 0);
+  //   const startDate = new Date();
+  //   startDate.setDate(startDate.getDate() - 6);
+  //   startDate.setHours(0, 0, 0, 0);
 
-    return this.gamesOverTimeByRange(startDate, endDate);
+  //   return this.gamesOverTimeByRange(startDate, endDate);
+  // }
+
+  // async gamesOverTime() {
+  // const endDate = new Date();
+  // endDate.setHours(23, 59, 59, 999);
+
+  // const startDate = new Date();
+  // startDate.setDate(startDate.getDate() - 6);
+  // startDate.setHours(0, 0, 0, 0);
+
+  // return this.gamesOverTimeByRange(startDate, endDate);
+  // }
+
+  // async gamesOverTimeByRange(startDate: Date, endDate: Date) {
+  //   // normalize boundary
+  //   const start = new Date(startDate);
+  //   start.setHours(0, 0, 0, 0);
+
+  //   const end = new Date(endDate);
+  //   end.setHours(23, 59, 59, 999);
+
+  //   // calculate days safely
+  //   const days =
+  //     Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  //   const rawEngaged = await this.prisma.suggestionHistory.findMany({
+  //     select: { sessionId: true, createdAt: true },
+  //     where: {
+  //       createdAt: {
+  //         gte: start,
+  //         lte: end,
+  //       },
+  //     },
+  //   });
+
+  //   const engagedMap = new Map<string, Set<string>>();
+
+  //   for (const row of rawEngaged) {
+  //     const key = toDateKey(row.createdAt);
+
+  //     if (!engagedMap.has(key)) {
+  //       engagedMap.set(key, new Set());
+  //     }
+
+  //     engagedMap.get(key)!.add(row.sessionId);
+  //   }
+
+  //   const rawCompleted = await this.prisma.gameSession.findMany({
+  //     select: { id: true, finishedAt: true },
+  //     where: {
+  //       finishedAt: {
+  //         not: null,
+  //         gte: start,
+  //         lte: end,
+  //       },
+  //     },
+  //   });
+
+  //   const completedMap = new Map<string, Set<string>>();
+
+  //   for (const row of rawCompleted) {
+  //     if (!row.finishedAt) continue;
+
+  //     const key = toDateKey(row.finishedAt);
+
+  //     if (!completedMap.has(key)) {
+  //       completedMap.set(key, new Set());
+  //     }
+
+  //     completedMap.get(key)!.add(row.id);
+  //   }
+
+  //   const allDates: string[] = [];
+
+  //   const cursor = new Date(start);
+  //   for (let i = 0; i < days; i++) {
+  //     allDates.push(toDateKey(cursor));
+  //     cursor.setDate(cursor.getDate() + 1);
+  //   }
+
+  //   const engagedPerDay = allDates.map((date) => ({
+  //     date,
+  //     count: engagedMap.get(date)?.size ?? 0,
+  //   }));
+
+  //   const completedPerDay = allDates.map((date) => ({
+  //     date,
+  //     count: completedMap.get(date)?.size ?? 0,
+  //   }));
+
+  //   return {
+  //     engagedPerDay,
+  //     completedPerDay,
+  //   };
+  // }
+
+async gamesOverTimeByRange(startDate: Date, endDate: Date) {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+
+  const days =
+    Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  // ======================
+  // 1. ENGAGED
+  // ======================
+  const rawEngaged = await this.prisma.suggestionHistory.findMany({
+    select: { sessionId: true, createdAt: true },
+    where: {
+      createdAt: { gte: start, lte: end },
+    },
+  });
+
+  const engagedMap = new Map<string, Set<string>>();
+
+  for (const row of rawEngaged) {
+    const key = toDateKey(row.createdAt);
+
+    if (!engagedMap.has(key)) {
+      engagedMap.set(key, new Set());
+    }
+
+    engagedMap.get(key)!.add(row.sessionId);
   }
 
-  async gamesOverTimeByRange(startDate: Date, endDate: Date) {
-    // normalize boundary
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    // calculate days safely
-    const days =
-      Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-    const rawEngaged = await this.prisma.suggestionHistory.findMany({
-      select: { sessionId: true, createdAt: true },
-      where: {
-        createdAt: {
-          gte: start,
-          lte: end,
-        },
+  // ======================
+  // 2. ENGAGED + COMPLETED
+  // ======================
+  const rawEngagedCompleted = await this.prisma.gameSession.findMany({
+    select: {
+      id: true,
+      finishedAt: true,
+      suggestionHistory: {
+        select: { id: true },
       },
-    });
+    },
+    where: {
+      finishedAt: { not: null, gte: start, lte: end },
+    },
+  });
 
-    const engagedMap = new Map<string, Set<string>>();
+  const engagedCompletedMap = new Map<string, Set<string>>();
 
-    for (const row of rawEngaged) {
-      const key = toDateKey(row.createdAt);
+  for (const session of rawEngagedCompleted) {
+    if (!session.finishedAt) continue;
+    if (session.suggestionHistory.length === 0) continue;
 
-      if (!engagedMap.has(key)) {
-        engagedMap.set(key, new Set());
-      }
+    const key = toDateKey(session.finishedAt);
 
-      engagedMap.get(key)!.add(row.sessionId);
+    if (!engagedCompletedMap.has(key)) {
+      engagedCompletedMap.set(key, new Set());
     }
 
-    const rawCompleted = await this.prisma.gameSession.findMany({
-      select: { id: true, finishedAt: true },
-      where: {
-        finishedAt: {
-          not: null,
-          gte: start,
-          lte: end,
-        },
-      },
-    });
+    engagedCompletedMap.get(key)!.add(session.id);
+  }
 
-    const completedMap = new Map<string, Set<string>>();
+  // ======================
+  // 3. DATE RANGE
+  // ======================
+  const allDates: string[] = [];
+  const cursor = new Date(start);
 
-    for (const row of rawCompleted) {
-      if (!row.finishedAt) continue;
+  for (let i = 0; i < days; i++) {
+    allDates.push(toDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
 
-      const key = toDateKey(row.finishedAt);
+  // ======================
+  // 4. OUTPUT
+  // ======================
+  const engagedPerDay = allDates.map((date) => ({
+    date,
+    count: engagedMap.get(date)?.size ?? 0,
+  }));
 
-      if (!completedMap.has(key)) {
-        completedMap.set(key, new Set());
-      }
+  const engagedCompletedPerDay = allDates.map((date) => ({
+    date,
+    count: engagedCompletedMap.get(date)?.size ?? 0,
+  }));
 
-      completedMap.get(key)!.add(row.id);
-    }
-
-    const allDates: string[] = [];
-
-    const cursor = new Date(start);
-    for (let i = 0; i < days; i++) {
-      allDates.push(toDateKey(cursor));
-      cursor.setDate(cursor.getDate() + 1);
-    }
-
-    const engagedPerDay = allDates.map((date) => ({
-      date,
-      count: engagedMap.get(date)?.size ?? 0,
-    }));
-
-    const completedPerDay = allDates.map((date) => ({
-      date,
-      count: completedMap.get(date)?.size ?? 0,
-    }));
-
-    return {
-      engagedPerDay,
-      completedPerDay,
-    };
+  return {
+    engagedPerDay,
+    engagedCompletedPerDay,
+  };
   }
 
 
@@ -234,63 +338,3 @@ export class AnalyticsService
 }
 
 
-  // async gamesOverTime(days: number) 
-  // {
-  //   const endDate = new Date();
-  //   const startDate = new Date();
-
-  //   //startDate.setDate(endDate.getDate() - days);
-  //   startDate.setDate(endDate.getDate() - (days - 1));
-
-  //   // Engaged session per day
-  //   const rawEngaged = await this.prisma.suggestionHistory.findMany({
-  //     select: { sessionId: true, createdAt: true },
-  //     where: { createdAt: { gte: startDate, lte: endDate,},},
-  //   });
-
-  //   const engagedMap = new Map<string, Set<string>>();
-
-  //   for (const row of rawEngaged) {
-  //     const date = row.createdAt.toISOString().split('T')[0];
-
-  //     if (!engagedMap.has(date)) {
-  //       engagedMap.set(date, new Set());
-  //     }
-
-  //     engagedMap.get(date)!.add(row.sessionId);
-  //   }
-
-  //   const allDates = [...Array(days)].map((_, i) => {
-  //   const d = new Date(startDate);
-  //   d.setDate(d.getDate() + i);
-  //   return d.toISOString().split('T')[0];
-  //   });
-
-  //   // 補齊每天的資料，即使沒有 session
-  //   const engagedPerDay = allDates.map(date => ({
-  //     date, count: engagedMap.get(date)?.size ?? 0,
-  //   }));
-
-  //   const rawCompleted = await this.prisma.gameSession.findMany({
-  //     select: { id: true, finishedAt: true, },
-  //     where: { finishedAt: { not: null, gte: startDate, lte: endDate, },},
-  //     });
-
-  //   const completedMap = new Map<string, Set<string>>();
-
-  //   for (const row of rawCompleted) {
-  //     const date = row.finishedAt!.toISOString().split('T')[0];
-
-  //     if (!completedMap.has(date)) {
-  //       completedMap.set(date, new Set());
-  //     }
-
-  //     completedMap.get(date)!.add(row.id);
-  //   }
-
-  //   const completedPerDay = allDates.map(date => ({
-  //     date, count: completedMap.get(date)?.size ?? 0,
-  //     }));
-
-  //   return {engagedPerDay, completedPerDay,};
-  // }
