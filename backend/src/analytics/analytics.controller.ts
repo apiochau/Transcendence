@@ -53,4 +53,8 @@ export class AnalyticsController
   getWinSpeedDistribution() {
     return this.analyticsService.getWinSpeedDistribution();
   };
+  @Get('sentiment')
+  getSentiment() {
+    return this.analyticsService.getSentiment();
+  }
 }

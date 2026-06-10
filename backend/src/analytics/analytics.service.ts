@@ -173,9 +173,6 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
   const days =
     Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-  // ======================
-  // 1. ENGAGED
-  // ======================
   const rawEngaged = await this.prisma.suggestionHistory.findMany({
     select: { sessionId: true, createdAt: true },
     where: {
@@ -195,9 +192,6 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
     engagedMap.get(key)!.add(row.sessionId);
   }
 
-  // ======================
-  // 2. ENGAGED + COMPLETED
-  // ======================
   const rawEngagedCompleted = await this.prisma.gameSession.findMany({
     select: {
       id: true,
@@ -226,9 +220,6 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
     engagedCompletedMap.get(key)!.add(session.id);
   }
 
-  // ======================
-  // 3. DATE RANGE
-  // ======================
   const allDates: string[] = [];
   const cursor = new Date(start);
 
@@ -237,9 +228,6 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // ======================
-  // 4. OUTPUT
-  // ======================
   const engagedPerDay = allDates.map((date) => ({
     date,
     count: engagedMap.get(date)?.size ?? 0,
@@ -333,6 +321,25 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
     }
 
     return Object.entries(buckets).map(([label, count]) => ({ label, count }));
+  }
+
+  async getSentiment() {
+    const result = await this.prisma.feedback.groupBy({
+      by: ['sentiment'],
+      where: {
+        sentiment: {
+          not: null,
+        },
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    return result.map((item) => ({
+      sentiment: item.sentiment,
+      count: item._count.id,
+    }));
   }
 
 }

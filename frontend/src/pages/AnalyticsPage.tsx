@@ -6,6 +6,7 @@ import { CollectionRarityDonutChart } from '../components/analytics/CollectionRa
 import { AnalyticsOverviewCards } from '../components/analytics/AnalyticsOverviewCards';
 import { useAnalyticsOverview } from '../components/analytics/useAnalyticsOverview';
 import { WinSpeedBarChart } from '../components/analytics/WinSpeedBarChart';
+import { SentimentDonutChart } from '../components/analytics/SentimentDonutChart';
 
 interface OverTimeData 
 {
@@ -31,17 +32,22 @@ interface WinSpeedItem
   count: number;
 }
 
+interface SentimentItem 
+{
+  sentiment: string;
+  count: number;
+}
+
 export function AnalyticsPage() 
 {    
     //const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
     const { overview, lastUpdated } = useAnalyticsOverview(); // SMART POLLING OVERVIEW (handled by hook)
     const [overTime, setOverTime] = useState<OverTimeData | null>(null);
-    //const [startDate, setStartDate] = useState<string>("");
-    //const [endDate, setEndDate] = useState<string>("");
     const [similarityDistribution, setSimilarityDistribution] = useState<SimilarityDistributionItem[]>([]);
     const [collectionRarity, setCollectionRarity] = useState<CollectionRarityItem[]>([]);
     const [winSpeedDistribution, setWinSpeedDistribution] = useState<WinSpeedItem[] | null>(null);
-
+    const [sentimentDistribution, setSentimentDistribution] = useState<SentimentItem[]>([]);
+    
     const today = new Date();
     const defaultEndDate = today.toISOString().slice(0, 10);
     const defaultStartDate = new Date(
@@ -94,6 +100,14 @@ export function AnalyticsPage()
           .catch(() => setWinSpeedDistribution([]));
       }, []);
 
+    //Load Sentiment Distribution
+    useEffect(() => {
+      apiClient
+        .get<SentimentItem[]>("/analytics/sentiment")
+        .then((response) => setSentimentDistribution(response.data))
+        .catch(() => setSentimentDistribution([]));
+    }, []); 
+
     // if (!overview || !overTime || 
     //   similarityDistribution.length === 0|| collectionRarity.length === 0) {
     //   return <div>Loading...</div>;
@@ -112,7 +126,7 @@ export function AnalyticsPage()
             lastUpdated={lastUpdated ?? undefined}
           />
         ) : (
-          <div className="mt-4 text-gray-500">
+          <div className="mt-4 text-gray-400">
             Loading overview...
           </div>
         )}
@@ -160,7 +174,7 @@ export function AnalyticsPage()
           </div>
 
           <button
-            className="rounded bg-green-600 px-3 py-1 text-white hover:bg-green-700"
+            className="rounded bg-green-600 px-3 py-1 text-white hover:bg-green-500"
             onClick={() => {
               const today = new Date();
               const last7 = new Date();
@@ -184,61 +198,61 @@ export function AnalyticsPage()
       )}
     </div>
 
-          {/* Donut Charts */}
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+         {/* Donut Charts */}
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 items-stretch">
 
-            {/* Similarity Distribution */}
-            <div className="card-surface p-3">
-              <h3 className="mb-4 text-lg font-semibold">
-                Similarity Word Category Distribution
-              </h3>
+          {/* Similarity Distribution */}
+          <div className="card-surface p-3 h-full flex flex-col">
+            <h3 className="mb-4 text-lg font-semibold">
+              Similarity Word Category Distribution
+            </h3>
 
-              <p className="mb-4 text-sm text-gray-500">
-                Based on clicked suggestions by users
-                (player behavior, not game generation)
-              </p>
+            <p className="mb-4 text-sm text-gray-400">
+              Based on clicked suggestions by users
+              (player behavior, not game generation)
+            </p>
 
+            <div className="flex-1">
               {similarityDistribution.length > 0 ? (
-                <SimilarityDonutChart
-                  data={similarityDistribution}
-                />
+                <SimilarityDonutChart data={similarityDistribution} />
               ) : (
                 <div className="h-[320px] flex items-center justify-center text-gray-500">
                   No data available
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Collection Rarity Distribution */}
-            <div className="card-surface p-3">
-              <h3 className="mb-4 text-lg font-semibold">
-                Collection Rarity Distribution
-              </h3>
+          {/* Collection Rarity Distribution */}
+          <div className="card-surface p-3 h-full flex flex-col">
+            <h3 className="mb-4 text-lg font-semibold">
+              Collection Rarity Distribution
+            </h3>
 
-              <p className="mb-4 text-sm text-gray-500">
-                Distribution of collected words across all
-                player inventories.
-              </p>
+            <p className="mb-4 text-sm text-gray-400">
+              Distribution of collected words across all player inventories.
+            </p>
 
+            <div className="flex-1">
               {collectionRarity.length > 0 ? (
-                <CollectionRarityDonutChart
-                  data={collectionRarity}
-                />
+                <CollectionRarityDonutChart data={collectionRarity} />
               ) : (
                 <div className="h-[320px] flex items-center justify-center text-gray-500">
                   No data available
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Session Duration Distribution */}
-            <div className="mt-6 card-surface p-3">
+          {/* Session Duration Distribution */}
+          <div className="card-surface p-3 h-full flex flex-col">
               <h3 className="mb-4 text-lg font-semibold">
                 Session Duration Distribution
               </h3>
-              <p className="mb-4 text-sm text-gray-500">
+              <p className="mb-4 text-sm text-gray-400">
                 Time from first suggestion click to session completion or abandon click.
               </p>
+              <div className="h-10" />
               {winSpeedDistribution === null ? (
                 <div className="h-[320px] flex items-center justify-center text-gray-500">
                   Loading...
@@ -251,6 +265,30 @@ export function AnalyticsPage()
                 <WinSpeedBarChart data={winSpeedDistribution} />
               )}
             </div>
+
+          {/* Feedback Sentiment Distribution */}
+          <div className="card-surface p-3 h-full flex flex-col">
+            <h3 className="mb-4 text-lg font-semibold">
+              Feedback Distribution
+            </h3>
+
+            <p className="mb-4 text-sm text-gray-400">
+              Distribution of user feedback sentiment generated
+              from post-game comments.
+            </p>
+
+            <div className="flex-1">
+              {sentimentDistribution.length > 0 ? (
+                <SentimentDonutChart data={sentimentDistribution} />
+              ) : (
+                <div className="h-[320px] flex items-center justify-center text-gray-500">
+                  No data available
+                </div>
+              )}
+            </div>
+          </div>
+
+
 
           </div>
         </div>
