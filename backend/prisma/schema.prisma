@@ -49,6 +49,8 @@ model User {
   wordCollection    WordCollectionItem[]
   dailyMatchAttempts DailyMatchAttempt[]
   wordStakeLocks     WordStakeLock[]
+  twoFactorEnabled  Boolean           @default(false)
+  twoFactorSecret   String?
 }
 
 model Friendship {

@@ -81,6 +81,13 @@ export function AppLayout() {
                       Mon profil
                     </button>
                     <button
+                    type="button"
+                    onClick={() => { navigate('/settings'); setMenuOpen(false);}}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                    >
+                      Paramètres
+                    </button>
+                    <button
                       type="button"
                       onClick={() => { logout(); navigate('/login'); setMenuOpen(false); }}
                       className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"

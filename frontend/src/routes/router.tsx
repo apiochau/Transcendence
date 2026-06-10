@@ -14,6 +14,7 @@ import { RulesPage } from '../pages/RulesPage';
 import { SoloGamePage } from '../pages/SoloGamePage';
 import { TournamentsPage } from '../pages/TournamentsPage';
 import { UserProfilePage } from '../pages/UserProfilePage';
+import { SettingsPage } from '../pages/SettingsPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
           { path: '/rules', element: <RulesPage /> },
           { path: '/tournaments', element: <TournamentsPage /> },
           { path: '/users/:id', element: <UserProfilePage /> },
+          { path: '/settings', element: <SettingsPage />},
         ],
       },
     ],
