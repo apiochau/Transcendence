@@ -245,33 +245,64 @@ test('collection service sorts by rarity then value and totals quantities', asyn
   assert.equal(collection.items[0].wordId, 'algorithme');
 });
 
+test('startup reconciliation refunds open duel stakes', async () => {
+  const refundedCollectionItems = [];
+  const updatedStakeLocks = [];
+  const stakeLocks = [
+    { id: 'queued-stake', userId: 'user-1', wordId: 'chat', status: 'QUEUED' },
+    { id: 'matched-stake', userId: 'user-2', wordId: 'chien', status: 'MATCHED' },
+  ];
+  const collectionService = new CollectionService({
+    wordStakeLock: {
+      findMany: async () => stakeLocks.map(({ id }) => ({ id })),
+      findUnique: async ({ where }) => stakeLocks.find((stakeLock) => stakeLock.id === where.id),
+      update: async ({ where, data }) => updatedStakeLocks.push({ id: where.id, status: data.status }),
+    },
+    wordCollectionItem: {
+      upsert: async ({ where }) => refundedCollectionItems.push(where.userId_wordId),
+    },
+    $transaction: async (operations) => Promise.all(operations),
+  });
+
+  await collectionService.onModuleInit();
+
+  assert.deepEqual(refundedCollectionItems, [
+    { userId: 'user-1', wordId: 'chat' },
+    { userId: 'user-2', wordId: 'chien' },
+  ]);
+  assert.deepEqual(updatedStakeLocks, [
+    { id: 'queued-stake', status: 'REFUNDED' },
+    { id: 'matched-stake', status: 'REFUNDED' },
+  ]);
+});
+
 test('leaderboard ranks players by collection value instead of rating', async () => {
   const statsService = new StatsService({
-    wordCollectionItem: {
+    user: {
       findMany: async () => [
         {
-          userId: 'player-low-rating',
-          quantity: 1,
-          word: { value: 5000 },
-          user: {
-            id: 'player-low-rating',
-            username: 'rich',
-            displayName: null,
-            avatarUrl: null,
-            stats: { wins: 1, gamesPlayed: 1 },
-          },
+          id: 'player-low-rating',
+          username: 'rich',
+          displayName: null,
+          avatarUrl: null,
+          stats: { wins: 1, gamesPlayed: 1 },
+          wordCollection: [{ quantity: 1, word: { value: 5000 } }],
         },
         {
-          userId: 'player-high-rating',
-          quantity: 1,
-          word: { value: 50 },
-          user: {
-            id: 'player-high-rating',
-            username: 'poor',
-            displayName: null,
-            avatarUrl: null,
-            stats: { wins: 99, gamesPlayed: 99 },
-          },
+          id: 'player-high-rating',
+          username: 'poor',
+          displayName: null,
+          avatarUrl: null,
+          stats: { wins: 99, gamesPlayed: 99 },
+          wordCollection: [{ quantity: 1, word: { value: 50 } }],
+        },
+        {
+          id: 'player-empty',
+          username: 'empty',
+          displayName: null,
+          avatarUrl: null,
+          stats: null,
+          wordCollection: [],
         },
       ],
     },
@@ -282,6 +313,8 @@ test('leaderboard ranks players by collection value instead of rating', async ()
   assert.equal(leaderboard[0].id, 'player-low-rating');
   assert.equal(leaderboard[0].collectionValue, 5000);
   assert.equal(leaderboard[1].collectionValue, 50);
+  assert.equal(leaderboard[2].id, 'player-empty');
+  assert.equal(leaderboard[2].collectionValue, 0);
 });
 
 test('daily matchmaking is consumed once a match is created', async () => {
@@ -300,6 +333,9 @@ test('daily matchmaking is consumed once a match is created', async () => {
         dailyAttempts.add(key);
         return { id: key, ...data };
       },
+    },
+    game: {
+      create: async ({ data }) => ({ id: data.roomId, ...data }),
     },
     $transaction: async (operations) => Promise.all(operations),
   };
@@ -341,7 +377,13 @@ test('duel matchmaking pairs only same rarity and refunds queued stake on leave'
     rareA: { id: 'stake-c', wordId: 'telephone', rarity: 'rare', word: { text: 'telephone' } },
   };
   const service = new MatchmakingService(
-    { dailyMatchAttempt: {}, $transaction: async (operations) => Promise.all(operations) },
+    {
+      dailyMatchAttempt: {},
+      game: {
+        create: async ({ data }) => ({ id: data.roomId, ...data }),
+      },
+      $transaction: async (operations) => Promise.all(operations),
+    },
     {
       createStakeLock: async (_userId, itemId) => stakeByItemId[itemId],
       assignStakeToRoom: async (stakeLockId, roomId) => ({ id: stakeLockId, roomId }),

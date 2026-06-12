@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../api/auth';
 import { getApiErrorMessage } from '../api/error';
+import { OAuthButtons } from '../components/OAuthButtons';
 import { useAuthStore } from '../store/auth.store';
 
 export function RegisterPage() {
@@ -49,6 +50,7 @@ export function RegisterPage() {
         >
           {isSubmitting ? 'Creation...' : 'Creer un compte'}
         </button>
+        <OAuthButtons label="Continuer" />
         <p className="mt-4 text-sm text-slate-600">Deja inscrit ? <Link className="font-semibold text-accent transition hover:text-teal-300" to="/login">Se connecter</Link></p>
       </form>
     </main>

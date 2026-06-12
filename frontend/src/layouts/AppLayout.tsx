@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useEffect, useRef, useState } from 'react';
+import { createSocket } from '../api/socket';
 
 const navItems = [
   { to: '/dashboard', label: 'Accueil' },
@@ -25,6 +26,7 @@ export function AppLayout() {
   const user = useAuthStore((state) => state.user);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<ReturnType<typeof createSocket> | null>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -34,6 +36,17 @@ export function AppLayout() {
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const socket = createSocket();
+    socketRef.current = socket;
+    socket.connect();
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    }
   }, []);
 
   return (

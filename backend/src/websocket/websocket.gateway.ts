@@ -17,6 +17,7 @@ import { SimilarityBucket } from '../game/types/suggestion.types';
 import { LocalWord, WordService } from '../game/word.service';
 import { MatchmakingMode, MatchmakingService } from '../matchmaking/matchmaking.service';
 import { StatsService } from '../stats/stats.service';
+import { PrismaService } from '../prisma.service';
 
 interface JoinRoomPayload {
   roomId: string;
@@ -102,6 +103,7 @@ const BUCKET_FALLBACK_ORDER: Record<SimilarityBucket, SimilarityBucket[]> = {
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(RealtimeGateway.name);
   private readonly rooms = new Map<string, RoomState>();
+  private readonly onlineUsers = new Set<string>();
 
   constructor(
     private readonly jwtService: JwtService,
@@ -111,6 +113,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly similarityService: SimilarityService,
     private readonly collectionService: CollectionService,
     private readonly matchmakingService: MatchmakingService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @WebSocketServer()
@@ -119,11 +122,21 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   handleConnection(client: Socket) {
     this.authenticateClient(client);
     this.logger.log(`socket connected: ${client.id}`);
+    const userId = client.data.userId as string | undefined;
+    if (userId) {
+      this.onlineUsers.add(userId);
+      this.server.emit('user:status', { userId, online:true });
+    }
   }
 
   handleDisconnect(client: Socket) {
     this.logger.log(`socket disconnected: ${client.id}`);
     this.removeClientFromRooms(client);
+    const userId = client.data.userId as string | undefined;
+    if (userId) {
+      this.onlineUsers.delete(userId);
+      this.server.emit('user:status', { userId, online:false });
+    }
   }
 
   @SubscribeMessage('room:join')
@@ -624,6 +637,15 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         this.logger.warn(`failed to record 1v1 result: ${(error as Error).message}`);
       }
     }
+
+    try {
+      await this.prisma.game.updateMany({
+        where: { roomId, status: 'ACTIVE' },
+        data: { status: 'FINISHED', winnerId: winnerUserId },
+      });
+    } catch (error) {
+      this.logger.warn(`failed to update game record: ${(error as Error).message}`);
+    }
   }
 
   private buildFinishedPayload(
@@ -726,6 +748,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     this.emitReadyState(roomId);
+  }
+
+  isOnline(userId:string): boolean {
+    return this.onlineUsers.has(userId);
   }
 
   private scheduleDisconnectForfeit(roomId: string, userId: string, playerState: PlayerState) {

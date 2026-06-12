@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CollectionService } from '../collection/collection.service';
 import { PrismaService } from '../prisma.service';
+import { GameStatus } from '@prisma/client';
 
 export type MatchmakingMode = 'training' | 'daily' | 'duel';
 
@@ -179,6 +180,15 @@ export class MatchmakingService {
         };
       }))
       : undefined;
+
+    await this.prisma.game.create({
+      data: {
+        roomId,
+        playerOneId: first.userId,
+        playerTwoId: second.userId,
+        status: GameStatus.ACTIVE,
+      },
+    });
 
     return {
       roomId,

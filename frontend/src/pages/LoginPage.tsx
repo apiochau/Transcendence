@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../api/auth';
 import { getApiErrorMessage } from '../api/error';
+import { OAuthButtons } from '../components/OAuthButtons';
 import { useAuthStore } from '../store/auth.store';
 
 export function LoginPage() {
@@ -46,6 +47,7 @@ export function LoginPage() {
         >
           {isSubmitting ? 'Connexion...' : 'Se connecter'}
         </button>
+        <OAuthButtons label="Se connecter" />
         <p className="mt-4 text-sm text-slate-600">Pas encore de compte ? <Link className="font-semibold text-accent transition hover:text-teal-300" to="/register">S'inscrire</Link></p>
       </form>
     </main>

@@ -24,9 +24,33 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  findByUsername(username: string) {
+    return this.prisma.user.findUnique({ where: { username } });
+  }
+
+  findByOAuth(provider: string, oauthId: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        oauthProvider: provider,
+        oauthId,
+      },
+    });
+  }
+
   findByEmailOrUsername(email: string, username: string) {
     return this.prisma.user.findFirst({
       where: { OR: [{ email }, { username }] },
+    });
+  }
+
+  linkOAuthAccount(id: string, provider: string, oauthId: string, data: Pick<Prisma.UserUpdateInput, 'avatarUrl' | 'displayName'> = {}) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...data,
+        oauthProvider: provider,
+        oauthId,
+      },
     });
   }
 
@@ -74,5 +98,26 @@ export class UsersService {
         avatarUrl: true,
       },
     });
+  }
+
+  async getMatchHistory(userId: string) {
+    const games = await this.prisma.game.findMany({
+      where: {
+        OR: [{ playerOneId: userId }, { playerTwoId: userId }],
+        status: 'FINISHED',
+      },
+      include: {
+        playerOne: { select: { id: true, username: true, displayName: true, avatarUrl: true }},
+        playerTwo: { select: { id: true, username: true, displayName: true, avatarUrl: true }},
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    return games.map((game) => ({
+      id: game.id,
+      createdAt: game.createdAt,
+      opponent: game.playerOneId === userId ? game.playerTwo : game.playerOne,
+      result: game.winnerId === userId ? 'win' : game.winnerId === null ? 'draw' : 'loss',
+    }));
   }
 }

@@ -8,6 +8,7 @@ import { LeaderboardPage } from '../pages/LeaderboardPage';
 import { LiveGamePage } from '../pages/LiveGamePage';
 import { LoginPage } from '../pages/LoginPage';
 import { MatchmakingPage } from '../pages/MatchmakingPage';
+import { OAuthCallbackPage } from '../pages/OAuthCallbackPage';
 import { ProfilePage } from '../pages/ProfilePage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { RulesPage } from '../pages/RulesPage';
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+  { path: '/oauth/callback', element: <OAuthCallbackPage /> },
   {
     element: <ProtectedRoute />,
     children: [

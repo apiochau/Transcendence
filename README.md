@@ -7,6 +7,7 @@ Le projet contient un frontend React, une API NestJS, un serveur WebSocket Socke
 ## Fonctionnalites
 
 - Authentification par email, pseudo et mot de passe.
+- Authentification OAuth 2.0 optionnelle avec Google, GitHub et 42.
 - Profil joueur avec avatar, nom affiche, statistiques et valeur de collection.
 - Partie solo type Cemantix avec suggestions controlees, score de proximite et historique.
 - Matchmaking 1v1 temps reel via Socket.IO.
@@ -120,6 +121,14 @@ DATABASE_URL=postgresql://lexmon:lexmon@postgres:5432/lexmon?schema=public
 JWT_SECRET=change-me-in-production
 JWT_EXPIRES_IN=1d
 CORS_ORIGIN=http://localhost:8080
+FRONTEND_URL=http://localhost:8080
+OAUTH_CALLBACK_BASE_URL=http://localhost:8080/api
+OAUTH_GOOGLE_CLIENT_ID=
+OAUTH_GOOGLE_CLIENT_SECRET=
+OAUTH_GITHUB_CLIENT_ID=
+OAUTH_GITHUB_CLIENT_SECRET=
+OAUTH_42_CLIENT_ID=
+OAUTH_42_CLIENT_SECRET=
 ```
 
 Variables importantes:
@@ -128,7 +137,26 @@ Variables importantes:
 - `JWT_SECRET`: secret de signature des tokens JWT. A changer hors environnement local.
 - `JWT_EXPIRES_IN`: duree de validite des tokens.
 - `CORS_ORIGIN`: origine frontend autorisee par le backend.
+- `FRONTEND_URL`: URL publique du frontend utilisee pour rediriger apres un OAuth reussi.
+- `OAUTH_CALLBACK_BASE_URL`: URL publique de l'API pour construire les callbacks OAuth.
+- `OAUTH_GOOGLE_CLIENT_ID` / `OAUTH_GOOGLE_CLIENT_SECRET`: identifiants OAuth Google.
+- `OAUTH_GITHUB_CLIENT_ID` / `OAUTH_GITHUB_CLIENT_SECRET`: identifiants OAuth GitHub.
+- `OAUTH_42_CLIENT_ID` / `OAUTH_42_CLIENT_SECRET`: identifiants OAuth 42.
 - `PORT`: port HTTP NestJS.
+
+### OAuth 2.0
+
+Les providers OAuth restent invisibles dans l'interface tant que leur `CLIENT_ID` et leur `CLIENT_SECRET` ne sont pas renseignes.
+
+URLs de callback a declarer dans les consoles provider en local Docker:
+
+```text
+Google: http://localhost:8080/api/auth/oauth/google/callback
+GitHub: http://localhost:8080/api/auth/oauth/github/callback
+42: http://localhost:8080/api/auth/oauth/42/callback
+```
+
+Apres validation par le provider, le backend cree ou lie le compte Lexmon par email, genere un JWT Lexmon, puis redirige vers `/oauth/callback` cote frontend.
 
 ### Frontend
 
