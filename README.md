@@ -8,6 +8,7 @@ Le projet contient un frontend React, une API NestJS, un serveur WebSocket Socke
 
 - Authentification par email, pseudo et mot de passe.
 - Authentification OAuth 2.0 optionnelle avec Google, GitHub et 42.
+- Double authentification TOTP (2FA) optionnelle via application compatible (Google Authenticator, iPhone, etc.).
 - Profil joueur avec avatar, nom affiche, statistiques et valeur de collection.
 - Partie solo type Cemantix avec suggestions controlees, score de proximite et historique.
 - Matchmaking 1v1 temps reel via Socket.IO.
@@ -309,6 +310,7 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 - `tournaments`: tournois et inscriptions.
 - `analytics`: statistiques de jeu, graphiques d'activité et indicateurs de performance.
 - `feedback`: commentaires des joueurs et analyse automatique des sentiments.
+- `settings`: parametres du compte, activation et desactivation de la 2FA.
 
 ## Frontend: Pages Principales
 
