@@ -307,6 +307,8 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 - `friends`: demandes d'amis et relations.
 - `notifications`: notifications utilisateur.
 - `tournaments`: tournois et inscriptions.
+- `analytics`: statistiques de jeu, graphiques d'activité et indicateurs de performance.
+- `feedback`: commentaires des joueurs et analyse automatique des sentiments.
 
 ## Frontend: Pages Principales
 
@@ -323,8 +325,7 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 - `/profile`: profil personnel.
 - `/users/:id`: profil public d'un joueur.
 - `/tournaments`: liste des tournois.
-- `/analytics`: statistiques de jeu et visualisations des données.
-- `/feedback`: commentaires des joueurs et analyse automatique des sentiments.
+- `/analytics`: visualisations des données.
 
 ## API HTTP Principale
 
