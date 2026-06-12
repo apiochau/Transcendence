@@ -14,11 +14,9 @@ import { RegisterPage } from '../pages/RegisterPage';
 import { RulesPage } from '../pages/RulesPage';
 import { SoloGamePage } from '../pages/SoloGamePage';
 import { TournamentsPage } from '../pages/TournamentsPage';
-//<<<<<<< HEAD
 import { AnalyticsPage } from '../pages/AnalyticsPage';
-//=======
 import { UserProfilePage } from '../pages/UserProfilePage';
-//>>>>>>> origin/DEV
+import { SettingsPage } from '../pages/SettingsPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -42,6 +40,7 @@ export const router = createBrowserRouter([
           { path: '/tournaments', element: <TournamentsPage /> },
           { path: '/analytics', element: <AnalyticsPage /> },
           { path: '/users/:id', element: <UserProfilePage /> },
+          { path: '/settings', element: <SettingsPage />},
         ],
       },
     ],

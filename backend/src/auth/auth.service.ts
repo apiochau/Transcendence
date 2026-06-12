@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RemoteOAuthProfile } from './oauth.types';
 import { RegisterDto } from './dto/register.dto';
+import { TwoFactorService } from './two-factor.service';
 
 interface AuthUser {
   id: string;
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly twoFactorService: TwoFactorService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -51,6 +53,29 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.twoFactorEnabled) {
+      const tempToken = await this.jwtService.signAsync(
+        { sub: user.id, twoFactorPending: true },
+        { expiresIn: '5m' },
+      );
+      return { requires2FA: true, tempToken };
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
+  async verifyTwoFactor(tempToken: string, code: string) {
+    const payload = await this.jwtService.verifyAsync(tempToken);
+    if (!payload.twoFactorPending)
+      throw new UnauthorizedException('Invalid temp token');
+    const user = await this.usersService.findById(payload.sub);
+    if (!user || !user.twoFactorSecret) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    const isValid = await this.twoFactorService.verifyToken(user.twoFactorSecret, code);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid TOTP code');
+    }
     return this.buildAuthResponse(user);
   }
 

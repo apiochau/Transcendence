@@ -56,6 +56,8 @@ model User {
   dailyMatchAttempts DailyMatchAttempt[]
   wordStakeLocks     WordStakeLock[]
   feedbacks         Feedback[]
+  twoFactorEnabled  Boolean           @default(false)
+  twoFactorSecret   String?
 }
 
 model Friendship {
