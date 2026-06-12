@@ -267,8 +267,10 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 │   ├── prisma/schema.prisma
 │   ├── scripts/buildEmbeddings.ts
 │   ├── src
+│   │   ├── analytics
 │   │   ├── auth
 │   │   ├── collection
+│   │   ├── feedback
 │   │   ├── friends
 │   │   ├── game
 │   │   ├── matchmaking
@@ -321,6 +323,8 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 - `/profile`: profil personnel.
 - `/users/:id`: profil public d'un joueur.
 - `/tournaments`: liste des tournois.
+- `/analytics`: statistiques de jeu et visualisations des données.
+- `/feedback`: commentaires des joueurs et analyse automatique des sentiments.
 
 ## API HTTP Principale
 
@@ -367,6 +371,15 @@ Toutes les routes backend sont prefixees par `/api`.
 - `GET /api/stats/leaderboard`
 - `GET /api/stats/:userId`
 
+### Analytics
+
+- `GET /api/analytics/overview`
+- `GET /api/analytics/games-over-time`
+- `GET /api/analytics/similarity-distribution`
+- `GET /api/analytics/collection-rarity-distribution`
+- `GET /api/analytics/win-speed-distribution`
+- `GET /api/analytics/sentiment`
+
 ### Autres Modules
 
 - `GET /api/friends`
@@ -376,6 +389,7 @@ Toutes les routes backend sont prefixees par `/api`.
 - `GET /api/tournaments`
 - `POST /api/tournaments`
 - `POST /api/tournaments/:id/entries`
+- `POST /api/feedback`
 
 ## WebSocket
 
