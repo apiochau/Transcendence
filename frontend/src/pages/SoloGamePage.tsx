@@ -13,6 +13,8 @@ import {
   submitFinalAnswer,
 } from '../api/game';
 
+import { FeedbackModal } from '../components/FeedbackModal';
+
 const bucketLabel: Record<SimilarityBucket, string> = {
   hot: 'Chaud',
   warm: 'Tiede',
@@ -53,6 +55,9 @@ export function SoloGamePage() {
   const [error, setError] = useState<string | null>(null);
   const nextRoundTimeoutRef = useRef<number | null>(null);
   const countdownIntervalRef = useRef<number | null>(null);
+
+  const [showFeedback, setShowFeedback] = useState(false);//FEEDBACK
+  const [finishedSessionId, setFinishedSessionId] = useState<string | null>(null);//
 
   function clearRoundTimers() {
     if (nextRoundTimeoutRef.current !== null) {
@@ -102,6 +107,52 @@ export function SoloGamePage() {
     setRevealed({});
     setAnswer('');
     setRoundCooldown(0);
+
+    try {
+      const session = await startSoloGame();
+      setSessionId(session.sessionId);
+      await loadSuggestions(session.sessionId);
+    } catch (caughtError) {
+      setError(getApiErrorMessage(caughtError, 'Impossible de lancer une partie solo.'));
+    } finally {
+      setIsStarting(false);
+    }
+  }
+
+
+    try {
+      const nextSuggestions = await getSoloSuggestions(nextSessionId);
+      setSuggestions(nextSuggestions);
+      setRevealed({});
+      setRoundCooldown(0);
+    } catch (caughtError) {
+      setError(getApiErrorMessage(caughtError, 'Impossible de charger les suggestions.'));
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }
+
+  async function refreshHistory(nextSessionId: string) {
+    const nextHistory = await getSoloHistory(nextSessionId);
+    setHistory(nextHistory);
+  }
+
+  async function startGame() {
+    setIsStarting(true);
+    clearRoundTimers();
+    setError(null);
+    setFinalMessage(null);
+    setRevealedSecret(null);
+    setShowVictory(false);
+    setIsFinished(false);
+    setHistory([]);
+    setSuggestions([]);
+    setRevealed({});
+    setAnswer('');
+    setRoundCooldown(0);
+
+    setShowFeedback(false);//FEEDBACK
+    setFinishedSessionId(null);//
 
     try {
       const session = await startSoloGame();
@@ -183,6 +234,9 @@ export function SoloGamePage() {
         setRoundCooldown(0);
         setFinalMessage('Bonne reponse.');
         setShowVictory(true);
+
+        setFinishedSessionId(sessionId);//FEEDBACK
+        setShowFeedback(true);//
       } else {
         setFinalMessage('Mauvaise reponse.');
       }
@@ -208,6 +262,10 @@ export function SoloGamePage() {
       setIsFinished(true);
       setRevealedSecret(result.secretWord);
       setFinalMessage('Partie abandonnee.');
+
+        
+      setFinishedSessionId(sessionId); //FEEDBACK
+      setShowFeedback(true);//
     } catch (caughtError) {
       setError(getApiErrorMessage(caughtError, 'Impossible d abandonner la partie.'));
     }
@@ -247,6 +305,14 @@ export function SoloGamePage() {
         </div>
       )}
 
+      {/*FEEDBACK*/}
+      {showFeedback && finishedSessionId && (
+        <FeedbackModal
+          sessionId={finishedSessionId}
+          onClose={() => setShowFeedback(false)}
+        />
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Lexmon</h1>
@@ -280,6 +346,27 @@ export function SoloGamePage() {
               <p className="text-xl font-bold">{history.length}</p>
             </div>
           </div>
+
+          {roundCooldown > 0 && (
+            <div className="soft-pop mt-5 flex items-center gap-4 rounded-md border border-accent/40 bg-teal-950/30 p-4">
+              <div className="timer-ring" style={{ '--timer-progress': timerProgress } as CSSProperties}>
+                <span>{roundCooldown}s</span>
+              </div>
+              <div>
+                <p className="font-semibold text-teal-100">Fenetre de reponse finale</p>
+                <p className="mt-1 text-sm text-slate-600">Les prochaines suggestions arrivent automatiquement.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {suggestions.map((suggestion, index) => {
+              const result = revealed[suggestion.wordId];
+              const isClicked = clickedWordId === suggestion.wordId;
+              const className = result
+                ? bucketClass[result.bucket]
+                : 'border-slate-200 bg-slate-900/20 text-ink hover:border-accent';
+
 
           {roundCooldown > 0 && (
             <div className="soft-pop mt-5 flex items-center gap-4 rounded-md border border-accent/40 bg-teal-950/30 p-4">
@@ -347,6 +434,26 @@ export function SoloGamePage() {
                 Abandonner
               </button>
             </div>
+
+            <form onSubmit={finalAnswer} className="flex flex-1 flex-col gap-3 sm:max-w-md sm:flex-row">
+              <input
+                type="text"
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                disabled={!sessionId || isFinished}
+                placeholder="Reponse finale"
+                className="min-h-12 flex-1 rounded-md border border-slate-300 px-4 py-3 outline-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-60"
+              />
+              <button
+                type="submit"
+                disabled={!sessionId || isFinished || !answer.trim()}
+                className="motion-button min-h-12 rounded-md bg-accent px-5 py-3 font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                Valider
+              </button>
+            </form>
+          </div>
+
 
             <form onSubmit={finalAnswer} className="flex flex-1 flex-col gap-3 sm:max-w-md sm:flex-row">
               <input

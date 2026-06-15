@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../api/client';
 import { getMyProfile, updateMyProfile, uploadAvatar, PublicProfile } from '../api/users';
+import { getMyProfile, updateMyProfile, PublicProfile, uploadAvatar } from '../api/users';
 import { useAuthStore } from '../store/auth.store';
 import { MatchHistoryList } from '../components/MatchHistoryList';
 
@@ -23,6 +24,9 @@ export function ProfilePage() {
       apiClient.get<PublicProfile>(`/users/${userId}`).then(({ data }) => setProfile(data));
     }
   }, [userId, isOwnProfile]);
+  useEffect(() => {
+    getMyProfile().then(setProfile);
+  }, []);
 
   function startEdit() {
     setDisplayName(profile?.displayName ?? '');
@@ -98,6 +102,31 @@ export function ProfilePage() {
               )}
             </div>
           )}
+      <h1 className="text-3xl font-bold">Profil</h1>
+      <div className="card-surface mt-8 p-6">
+        {/* Avatar */}
+        <div className="flex items-center gap-5">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="group relative h-20 w-20 rounded-full overflow-hidden"
+            title="Changer l'avatar"
+          >
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt="avatar"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
+                {avatarLetter}
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition group-hover:opacity-100">
+              <span className="text-xs font-semibold text-white">Modifier</span>
+            </div>
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -111,6 +140,7 @@ export function ProfilePage() {
             {isOwnProfile && (
               <p className="text-sm text-slate-500">{profile?.email ?? user?.email}</p>
             )}
+            <p className="text-sm text-slate-500">{profile?.email ?? user?.email}</p>
           </div>
         </div>
 
@@ -134,6 +164,9 @@ export function ProfilePage() {
         <MatchHistoryList userId={profile?.id ?? ''} />
 
         {isOwnProfile && !editing && (
+        <MatchHistoryList userId={user?.id ?? ''} />
+
+        {!editing ? (
           <button
             type="button"
             onClick={startEdit}
@@ -143,6 +176,10 @@ export function ProfilePage() {
           </button>
         )}
         {isOwnProfile && editing && (
+            >
+              Modifier le profil
+            </button>
+        ) : (
           <div className="mt-6 flex flex-col gap-3">
             <label className="text-sm font-medium text-slate-600">
               Nom affiché
@@ -153,6 +190,7 @@ export function ProfilePage() {
                 maxLength={40}
                 className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-accent focus:outline-none"
               />
+                />
             </label>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-3">
@@ -171,10 +209,20 @@ export function ProfilePage() {
               >
                 Annuler
               </button>
+                >
+                  {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="rounded-md border border-slate-300 px-5 py-2 font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Annuler
+                  </button>
             </div>
           </div>
         )}
       </div>
-    </section>
+      </section>
   );
 }

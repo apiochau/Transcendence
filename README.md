@@ -8,6 +8,7 @@ Le projet contient un frontend React, une API NestJS, un serveur WebSocket Socke
 
 - Authentification par email, pseudo et mot de passe.
 - Authentification OAuth 2.0 optionnelle avec Google, GitHub et 42.
+- Double authentification TOTP (2FA) optionnelle via application compatible (Google Authenticator, iPhone, etc.).
 - Profil joueur avec avatar, nom affiche, statistiques et valeur de collection.
 - Partie solo type Cemantix avec suggestions controlees, score de proximite et historique.
 - Matchmaking 1v1 temps reel via Socket.IO.
@@ -267,8 +268,10 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 │   ├── prisma/schema.prisma
 │   ├── scripts/buildEmbeddings.ts
 │   ├── src
+│   │   ├── analytics
 │   │   ├── auth
 │   │   ├── collection
+│   │   ├── feedback
 │   │   ├── friends
 │   │   ├── game
 │   │   ├── matchmaking
@@ -305,6 +308,9 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 - `friends`: demandes d'amis et relations.
 - `notifications`: notifications utilisateur.
 - `tournaments`: tournois et inscriptions.
+- `analytics`: statistiques de jeu, graphiques d'activité et indicateurs de performance.
+- `feedback`: commentaires des joueurs et analyse automatique des sentiments.
+- `settings`: parametres du compte, activation et desactivation de la 2FA.
 
 ## Frontend: Pages Principales
 
@@ -321,6 +327,7 @@ Le classement trie les joueurs par valeur totale de collection, puis par victoir
 - `/profile`: profil personnel.
 - `/users/:id`: profil public d'un joueur.
 - `/tournaments`: liste des tournois.
+- `/analytics`: visualisations des données.
 
 ## API HTTP Principale
 
@@ -367,6 +374,15 @@ Toutes les routes backend sont prefixees par `/api`.
 - `GET /api/stats/leaderboard`
 - `GET /api/stats/:userId`
 
+### Analytics
+
+- `GET /api/analytics/overview`
+- `GET /api/analytics/games-over-time`
+- `GET /api/analytics/similarity-distribution`
+- `GET /api/analytics/collection-rarity-distribution`
+- `GET /api/analytics/win-speed-distribution`
+- `GET /api/analytics/sentiment`
+
 ### Autres Modules
 
 - `GET /api/friends`
@@ -376,6 +392,7 @@ Toutes les routes backend sont prefixees par `/api`.
 - `GET /api/tournaments`
 - `POST /api/tournaments`
 - `POST /api/tournaments/:id/entries`
+- `POST /api/feedback`
 
 ## WebSocket
 
@@ -417,6 +434,66 @@ cd frontend
 npm install
 npm run build
 npm run dev
+```
+
+### Backend
+
+```sh
+cd backend
+npm install
+npm run build
+npm run start:dev
+```
+
+### Prisma
+
+```sh
+cd backend
+npm run prisma:generate
+npm run prisma:push
+```
+
+### Tests
+
+```sh
+cd backend
+npm run test:similarity
+npm run test:game
+```
+
+`test:game` couvre notamment:
+
+- le demarrage d'une partie 1v1;
+- les recompenses Daily;
+- la reconnexion en cours de partie;
+- l'abandon;
+- le reglement des mises Duel;
+- le tri de collection;
+- le classement par valeur de collection;
+- le verrouillage Daily;
+- les suggestions controlees et la similarite.
+
+## Embeddings Et Dictionnaire Local
+
+Lexmon charge les embeddings depuis:
+
+```text
+backend/data/embeddings/words.json
+```
+
+Le backend synchronise les mots controles en base au demarrage.
+
+Pour generer un dictionnaire reduit depuis un fichier FastText francais local:
+
+```sh
+cd backend
+npm run build:embeddings -- \
+  --fasttext /path/to/cc.fr.300.vec \
+  --wordlist /path/to/french-words.txt \
+  --output data/embeddings/words.json \
+  --limit 10000
+```
+
 ```
 
 ### Backend

@@ -8,6 +8,8 @@ const navItems = [
   { to: '/dashboard', label: 'Accueil' },
   { to: '/matchmaking', label: 'Matchmaking' },
   { to: '/solo', label: 'Partie solo' },
+  //{ to: '/profile', label: 'Profile' },
+  { to: '/analytics', label: 'Analytics' },
   { to: '/collection', label: 'Collection' },
   { to: '/leaderboard', label: 'Classement' },
   { to: '/rules', label: 'Regles' },
@@ -81,6 +83,13 @@ export function AppLayout() {
                     className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
                     >
                       Mon profil
+                    </button>
+                    <button
+                    type="button"
+                    onClick={() => { navigate('/settings'); setMenuOpen(false);}}
+                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                    >
+                      Paramètres
                     </button>
                     <button
                       type="button"

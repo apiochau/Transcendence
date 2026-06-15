@@ -4,6 +4,10 @@ import { apiClient } from '../api/client';
 import { getApiErrorMessage } from '../api/error';
 import { getUserProfile, PublicProfile } from '../api/users';
 import { useAuthStore } from '../store/auth.store';
+import {useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { getUserProfile, PublicProfile } from '../api/users';
+import { useAuthStore } from '../store/auth.store'
 import { MatchHistoryList } from '../components/MatchHistoryList';
 
 export function UserProfilePage() {
@@ -65,6 +69,11 @@ export function UserProfilePage() {
                         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
                             {avatarLetter}
                         </div>
+                            />
+                    ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
+                            {avatarLetter}
+                            </div>
                     )}
                     <div>
                         <div className="flex items-center gap-2">
@@ -116,8 +125,17 @@ export function UserProfilePage() {
                             <p className="mt-2 text-sm text-red-600">{actionError}</p>
                         )}
                     </div>
+                
+                {!isOwnProfile && (
+                    <button
+                        type="button"
+                        className="motion-button mt-6 rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800"
+                        >
+                            + Ajouter en ami
+                        </button>
                 )}
             </div>
         </section>
     );
+}
 }

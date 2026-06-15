@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RemoteOAuthProfile } from './oauth.types';
 import { RegisterDto } from './dto/register.dto';
+import { TwoFactorService } from './two-factor.service';
 
 interface AuthUser {
   id: string;
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly twoFactorService: TwoFactorService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -50,6 +52,62 @@ export class AuthService {
     if (!passwordMatches) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    if (user.twoFactorEnabled) {
+      const tempToken = await this.jwtService.signAsync(
+        { sub: user.id, twoFactorPending: true },
+        { expiresIn: '5m' },
+      );
+      return { requires2FA: true, tempToken };
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
+  async verifyTwoFactor(tempToken: string, code: string) {
+    const payload = await this.jwtService.verifyAsync(tempToken);
+    if (!payload.twoFactorPending)
+      throw new UnauthorizedException('Invalid temp token');
+    const user = await this.usersService.findById(payload.sub);
+    if (!user || !user.twoFactorSecret) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    const isValid = await this.twoFactorService.verifyToken(user.twoFactorSecret, code);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid TOTP code');
+    }
+    return this.buildAuthResponse(user);
+  }
+
+  async loginWithOAuth(profile: RemoteOAuthProfile) {
+    if (!profile.email || profile.email === 'undefined' || profile.email === 'null') {
+      throw new UnauthorizedException('OAuth provider did not return an email address');
+    }
+
+    const existingOAuthUser = await this.usersService.findByOAuth(profile.provider, profile.providerUserId);
+    if (existingOAuthUser) {
+      return this.buildAuthResponse(existingOAuthUser);
+    }
+
+    const existingEmailUser = await this.usersService.findByEmail(profile.email);
+    if (existingEmailUser) {
+      const linkedUser = await this.usersService.linkOAuthAccount(existingEmailUser.id, profile.provider, profile.providerUserId, {
+        displayName: existingEmailUser.displayName ?? profile.displayName,
+        avatarUrl: existingEmailUser.avatarUrl ?? profile.avatarUrl,
+      });
+      return this.buildAuthResponse(linkedUser);
+    }
+
+    const username = await this.createAvailableUsername(profile.username);
+    const user = await this.usersService.create({
+      email: profile.email,
+      username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      oauthProvider: profile.provider,
+      oauthId: profile.providerUserId,
+      passwordHash: await bcrypt.hash(randomUUID(), 12),
+    });
 
     return this.buildAuthResponse(user);
   }

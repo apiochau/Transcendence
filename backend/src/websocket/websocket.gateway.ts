@@ -130,6 +130,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       void client.join(`chat:global`);
     }
     this.logger.log('socket connected: ${client.id}');
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -249,6 +250,14 @@ async chatPrivate(
 
     if (payload.event === 'suggestions:next') {
       this.generateSuggestionsForClient(client, payload.roomId);
+      return;
+    }
+
+    if (payload.event === 'suggestion:click') {
+      this.clickSuggestion(client, payload);
+      return;
+    }
+
       return;
     }
 
@@ -405,6 +414,11 @@ async chatPrivate(
     const userId = this.getAuthenticatedUserId(client);
     const room = this.rooms.get(roomId);
 
+
+  private generateSuggestionsForClient(client: Socket, roomId: string) {
+    const userId = this.getAuthenticatedUserId(client);
+    const room = this.rooms.get(roomId);
+
     if (!userId || !room) {
       client.emit('game:error', { message: 'Room not found' });
       return;
@@ -556,6 +570,42 @@ async chatPrivate(
       players: room.players.size,
       ready: Array.from(room.players).filter((userId) => this.getPlayerState(room, userId).ready).length,
       started: room.started,
+    });
+  }
+
+  private emitCurrentSuggestionsToPlayer(room: RoomState, userId: string) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
+      return;
+    }
+
+    this.emitToPlayer(room, userId, 'game:suggestions', {
+      suggestions: playerState.currentWordIds
+        .map((wordId) => this.wordService.getWord(wordId))
+        .filter((word): word is LocalWord => Boolean(word))
+        .map((word) => ({ wordId: word.id, word: word.text })),
+    });
+  }
+
+  private emitSessionState(roomId: string, room: RoomState, userId: string) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
+      return;
+    }
+
+    const currentSuggestions = playerState.currentWordIds
+      .map((wordId) => this.wordService.getWord(wordId))
+      .filter((word): word is LocalWord => Boolean(word))
+      .map((word) => ({ wordId: word.id, word: word.text }));
+
+    this.emitToPlayer(room, userId, 'game:session-state', {
+      roomId,
+      started: room.started,
+      finished: room.finished,
+      suggestions: currentSuggestions,
+      history: playerState.clickedSuggestions,
+      cooldownMs: playerState.cooldownUntil ? Math.max(0, playerState.cooldownUntil - Date.now()) : 0,
+      opponentState: this.buildOpponentState(roomId, room, userId),
     });
   }
 
