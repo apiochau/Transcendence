@@ -85,7 +85,7 @@ export function FriendsPage() {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
-    if (searchQuery.trim().length < 3) {
+    if (searchQuery.trim().length < 2) {
       setSearchResults([]);
       setSearching(false);
       return;
@@ -165,7 +165,7 @@ export function FriendsPage() {
         {searchError && <p className="mt-2 text-xs text-red-600">{searchError}</p>}
         {actionError && <p className="mt-2 text-xs text-red-600">{actionError}</p>}
 
-        {searchQuery.trim().length > 3 && (
+        {searchQuery.trim().length > 2 && (
           <div className="mt-3 space-y-2">
             {searching && <p className="text-sm text-slate-500">Recherche...</p>}
             {!searching && searchResults.length === 0 && searchQuery.trim().length > 0 && (

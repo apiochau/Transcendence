@@ -24,7 +24,7 @@ interface RevealedSuggestion {
   score: number;
   bucket: SimilarityBucket;
   createdAt: string;
-  cooldownMs?: number;
+  cooldownMs?: false;
 }
 
 interface OpponentScore {
@@ -116,6 +116,10 @@ export function LiveGamePage() {
   const [secretWord, setSecretWord] = useState<string | null>(null);
   const [finishedStats, setFinishedStats] = useState<GameFinishedPayload | null>(null);
   const [showCollectionReward, setShowCollectionReward] = useState(false);
+  const [waitingOpponent, setWaitingOpponent] = useState(false);
+  const [skipUsed, setSkipUsed] = useState(false);
+
+
 
   const sortedHistory = useMemo(
     () => history.slice().sort((left, right) => right.score - left.score),
@@ -308,6 +312,13 @@ export function LiveGamePage() {
     socket.on('game:final-answer-result', onFinalAnswerResult);
     socket.on('game:finished', onGameFinished);
     socket.on('game:error', onGameError);
+    socket.on('game:waiting-opponent', () => {
+      setWaitingOpponent(true);
+    });
+    socket.on('game:round-complete', () => {
+      setWaitingOpponent(false);
+      setSkipUsed(false);
+    });
     socket.connect();
 
     return () => {
@@ -385,7 +396,7 @@ export function LiveGamePage() {
     if (!socket?.connected || waitingForNextSuggestions || finished) {
       return;
     }
-
+    setSkipUsed(true);
     socket.emit('game:signal', { roomId, event: 'suggestions:next' });
   }
 
@@ -585,6 +596,11 @@ export function LiveGamePage() {
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Suggestions</p>
                   <h2 className="mt-2 text-2xl font-bold">Choisis un mot</h2>
                 </div>
+                {waitingOpponent && (
+                  <p className="mb-3 text-center text-sm font-medium text-amber-600">
+                    ⏳ En attente de l'adversaire...
+                  </p>
+                )}
                 {waitingForNextSuggestions && (
                   <div className="timer-ring" style={{ '--timer-progress': `${(cooldownRemaining / 5) * 100}` } as CSSProperties}>
                     <span>{cooldownRemaining}s</span>
@@ -608,7 +624,7 @@ export function LiveGamePage() {
                       key={suggestion.wordId}
                       type="button"
                       onClick={() => clickSuggestion(suggestion.wordId)}
-                      disabled={isLocked || waitingForNextSuggestions}
+                      disabled={isLocked || waitingForNextSuggestions || waitingOpponent}
                       className={`interactive-card stagger-item min-h-28 rounded-md border p-5 text-left disabled:cursor-not-allowed disabled:opacity-80 ${className}`}
                       style={{ animationDelay: `${index * 70}ms` }}
                     >
@@ -628,7 +644,7 @@ export function LiveGamePage() {
                 <button
                   type="button"
                   onClick={requestNextSuggestions}
-                  disabled={!connected || waitingForNextSuggestions || lockedWordId !== null}
+                  disabled={!connected || waitingForNextSuggestions || lockedWordId !== null || skipUsed}
                   className="motion-button ghost-button rounded-md border border-slate-600 px-4 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Suggestion suivante

@@ -48,11 +48,12 @@ interface PlayerState {
   socketIds: Set<string>;
   ready: boolean;
   shownWordIds: Set<string>;
+  skipCountThisRound: number;
   currentWordIds: string[];
   clickedSuggestions: MultiplayerHistoryItem[];
   finalAttemptCount: number;
-  cooldownUntil: number | null;
   disconnectForfeitTimer: NodeJS.Timeout | null;
+  playedThisRound: boolean;
 }
 
 interface RoomState {
@@ -88,7 +89,6 @@ interface FinishedPayload {
   }>;
 }
 
-const SUGGESTION_COOLDOWN_MS = 5000;
 const DISCONNECT_FORFEIT_GRACE_MS = 30000;
 const REQUIRED_PLAYER_COUNT = 2;
 const BUCKETS: SimilarityBucket[] = ['hot', 'warm', 'cold', 'frozen'];
@@ -115,6 +115,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     private readonly matchmakingService: MatchmakingService,
     private readonly prisma: PrismaService,
   ) {}
+
 
   @WebSocketServer()
   server: Server;
@@ -297,15 +298,16 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (existingState) {
       return existingState;
     }
-
+    
     const playerState: PlayerState = {
       socketIds: new Set<string>(),
+      playedThisRound : false,
+      skipCountThisRound: 0,
       ready: false,
       shownWordIds: new Set<string>(),
       currentWordIds: [],
       clickedSuggestions: [],
       finalAttemptCount: 0,
-      cooldownUntil: null,
       disconnectForfeitTimer: null,
     };
     room.playerStates.set(userId, playerState);
@@ -355,7 +357,6 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       playerState.currentWordIds = [];
       playerState.clickedSuggestions = [];
       playerState.finalAttemptCount = 0;
-      playerState.cooldownUntil = null;
       this.clearDisconnectForfeitTimer(playerState);
     }
 
@@ -408,7 +409,17 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       client.emit('game:error', { message: 'Room not found' });
       return;
     }
-
+    const playerState = room.playerStates.get(userId);
+    if (playerState?.playedThisRound) {
+      playerState.skipCountThisRound += 1;
+      if (playerState?.skipCountThisRound) {
+        client.emit('game:error', { message: 'Tu as deja utilise ta suggestion suivante pour ce tour' });
+        return;
+      }
+      playerState.skipCountThisRound = 1;
+      client.emit('game:waiting-opponent', {});
+      return;
+    }
     this.generateSuggestions(roomId, room, userId);
   }
 
@@ -417,14 +428,6 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     const playerState = room.playerStates.get(userId);
 
     if (!secretWord || !playerState || !room.started || room.finished) {
-      return;
-    }
-
-    if (playerState.cooldownUntil && playerState.cooldownUntil > Date.now()) {
-      this.emitToPlayer(room, userId, 'game:error', {
-        message: 'Suggestions are still cooling down',
-        remainingMs: playerState.cooldownUntil - Date.now(),
-      });
       return;
     }
 
@@ -452,7 +455,6 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     const suggestions = this.shuffle(Array.from(selected.values()).slice(0, 4));
     playerState.currentWordIds = suggestions.map((word) => word.id);
     suggestions.forEach((word) => playerState.shownWordIds.add(word.id));
-    playerState.cooldownUntil = null;
 
     this.emitToPlayer(room, userId, 'game:suggestions', {
       roomId,
@@ -495,11 +497,35 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     playerState.clickedSuggestions.push(historyItem);
     playerState.currentWordIds = [];
-    playerState.cooldownUntil = Date.now() + SUGGESTION_COOLDOWN_MS;
+    playerState.playedThisRound = true;
+      
+    const allPlayed = Array.from(room.players).every(
+      (id) => room.playerStates.get(id)?.playedThisRound === true,
+    );
+    
+    if (allPlayed) {
+    const roomId = payload.roomId;
+    setTimeout(() => {
+      const currentRoom = this.rooms.get(roomId);
+      if (!currentRoom || currentRoom.finished) return;
+      for (const id of currentRoom.players) {
+        const ps = currentRoom.playerStates.get(id);
+        if (ps) {
+          ps.playedThisRound = false;
+          ps.skipCountThisRound = 0;
+        }
+      }
+      this.server.to(roomId).emit('game:round-complete', {});
+      for (const id of currentRoom.players) {
+        this.generateSuggestions(roomId, currentRoom, id);
+      }
+    }, 2500);
+  } else {
+    client.emit('game:waiting-opponent', {});
+  }
 
     client.emit('game:suggestion-result', {
       ...historyItem,
-      cooldownMs: SUGGESTION_COOLDOWN_MS,
     });
     this.emitOpponentStates(payload.roomId, room);
   }
@@ -589,7 +615,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       finished: room.finished,
       suggestions: currentSuggestions,
       history: playerState.clickedSuggestions,
-      cooldownMs: playerState.cooldownUntil ? Math.max(0, playerState.cooldownUntil - Date.now()) : 0,
+      cooldownMs: 0,
       opponentState: this.buildOpponentState(roomId, room, userId),
     });
   }
