@@ -494,6 +494,66 @@ npm run build:embeddings -- \
   --limit 10000
 ```
 
+```
+
+### Backend
+
+```sh
+cd backend
+npm install
+npm run build
+npm run start:dev
+```
+
+### Prisma
+
+```sh
+cd backend
+npm run prisma:generate
+npm run prisma:push
+```
+
+### Tests
+
+```sh
+cd backend
+npm run test:similarity
+npm run test:game
+```
+
+`test:game` couvre notamment:
+
+- le demarrage d'une partie 1v1;
+- les recompenses Daily;
+- la reconnexion en cours de partie;
+- l'abandon;
+- le reglement des mises Duel;
+- le tri de collection;
+- le classement par valeur de collection;
+- le verrouillage Daily;
+- les suggestions controlees et la similarite.
+
+## Embeddings Et Dictionnaire Local
+
+Lexmon charge les embeddings depuis:
+
+```text
+backend/data/embeddings/words.json
+```
+
+Le backend synchronise les mots controles en base au demarrage.
+
+Pour generer un dictionnaire reduit depuis un fichier FastText francais local:
+
+```sh
+cd backend
+npm run build:embeddings -- \
+  --fasttext /path/to/cc.fr.300.vec \
+  --wordlist /path/to/french-words.txt \
+  --output data/embeddings/words.json \
+  --limit 10000
+```
+
 Le gameplay n'appelle pas d'API externe d'embeddings.
 
 ## Donnees Persistantes

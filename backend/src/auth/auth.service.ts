@@ -112,6 +112,39 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  async loginWithOAuth(profile: RemoteOAuthProfile) {
+    if (!profile.email || profile.email === 'undefined' || profile.email === 'null') {
+      throw new UnauthorizedException('OAuth provider did not return an email address');
+    }
+
+    const existingOAuthUser = await this.usersService.findByOAuth(profile.provider, profile.providerUserId);
+    if (existingOAuthUser) {
+      return this.buildAuthResponse(existingOAuthUser);
+    }
+
+    const existingEmailUser = await this.usersService.findByEmail(profile.email);
+    if (existingEmailUser) {
+      const linkedUser = await this.usersService.linkOAuthAccount(existingEmailUser.id, profile.provider, profile.providerUserId, {
+        displayName: existingEmailUser.displayName ?? profile.displayName,
+        avatarUrl: existingEmailUser.avatarUrl ?? profile.avatarUrl,
+      });
+      return this.buildAuthResponse(linkedUser);
+    }
+
+    const username = await this.createAvailableUsername(profile.username);
+    const user = await this.usersService.create({
+      email: profile.email,
+      username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      oauthProvider: profile.provider,
+      oauthId: profile.providerUserId,
+      passwordHash: await bcrypt.hash(randomUUID(), 12),
+    });
+
+    return this.buildAuthResponse(user);
+  }
+
   private async createAvailableUsername(baseUsername: string) {
     const cleanBase = baseUsername.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20) || 'player';
     const existingUser = await this.usersService.findByUsername(cleanBase);

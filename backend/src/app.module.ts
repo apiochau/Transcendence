@@ -11,6 +11,7 @@ import { StatsModule } from './stats/stats.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { UsersModule } from './users/users.module';
 import { WebsocketModule } from './websocket/websocket.module';
+import { ChatModule } from './chat/chat.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { FeedbackModule } from './feedback/feedback.module';
 
@@ -23,6 +24,7 @@ import { FeedbackModule } from './feedback/feedback.module';
     UsersModule,
     FriendsModule,
     GameModule,
+    ChatModule,
     MatchmakingModule,
     TournamentsModule,
     StatsModule,

@@ -1,3 +1,9 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { apiClient } from '../api/client';
+import { getApiErrorMessage } from '../api/error';
+import { getUserProfile, PublicProfile } from '../api/users';
+import { useAuthStore } from '../store/auth.store';
 import {useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getUserProfile, PublicProfile } from '../api/users';
@@ -9,6 +15,9 @@ export function UserProfilePage() {
     const currentUser = useAuthStore((state) => state.user);
     const [profile, setProfile] = useState<PublicProfile | null>(null);
     const [notFound, setNotFound] = useState(false);
+    const [sending, setSending] = useState(false);
+    const [requestSent, setRequestSent] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -16,6 +25,20 @@ export function UserProfilePage() {
             .then(setProfile)
             .catch(() => setNotFound(true));
     }, [id]);
+
+    async function sendFriendRequest() {
+        if (!profile) return;
+        setSending(true);
+        setActionError(null);
+        try {
+            await apiClient.post('/friends/requests', { username: profile.username });
+            setRequestSent(true);
+        } catch (e) {
+            setActionError(getApiErrorMessage(e, 'Impossible d envoyer la demande.'));
+        } finally {
+            setSending(false);
+        }
+    }
 
     if (notFound) {
         return (
@@ -41,6 +64,11 @@ export function UserProfilePage() {
                             src={profile.avatarUrl}
                             alt="avatar"
                             className="h-20 w-20 rounded-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
+                            {avatarLetter}
+                        </div>
                             />
                     ) : (
                         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent text-2xl font-bold text-white">
@@ -78,6 +106,25 @@ export function UserProfilePage() {
                 )}
 
                 <MatchHistoryList userId={id ?? ''} />
+
+                {!isOwnProfile && profile && (
+                    <div className="mt-6">
+                        {requestSent ? (
+                            <p className="text-sm font-semibold text-green-700">Demande envoyée ✓</p>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={sendFriendRequest}
+                                disabled={sending}
+                                className="motion-button rounded-md bg-accent px-5 py-2 font-semibold text-white hover:bg-teal-800 disabled:bg-slate-400"
+                            >
+                                {sending ? 'Envoi...' : '+ Ajouter en ami'}
+                            </button>
+                        )}
+                        {actionError && (
+                            <p className="mt-2 text-sm text-red-600">{actionError}</p>
+                        )}
+                    </div>
                 
                 {!isOwnProfile && (
                     <button
@@ -90,4 +137,5 @@ export function UserProfilePage() {
             </div>
         </section>
     );
+}
 }

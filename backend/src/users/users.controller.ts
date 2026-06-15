@@ -1,5 +1,6 @@
 import {
   Body, Controller, Get, Param, Patch,
+  Post, UploadedFile, UseGuards, Query, UseInterceptors,
   Post, UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -55,6 +56,12 @@ export class UsersController {
     const avatarUrl = `/uploads/avatars/${file.filename}`;
     return this.usersService.updateProfile(user.userId, { avatarUrl });
   }
+
+  @Get('search')
+  search(@Query('q') q: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.searchUsers(q.trim(), user.userId);
+  }
+
   
   @Get(':id')
   async getProfile(@Param('id') id: string) {

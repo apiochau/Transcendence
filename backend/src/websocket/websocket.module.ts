@@ -8,6 +8,7 @@ import { RealtimeGateway } from './websocket.gateway';
 import { PrismaModule } from '../prisma.module';
 
 @Module({
+  imports: [JwtModule.register({}), StatsModule, GameModule, CollectionModule, MatchmakingModule, PrismaModule],
   imports: [JwtModule.register({}), StatsModule, GameModule, CollectionModule, MatchmakingModule],
   providers: [RealtimeGateway],
   exports: [RealtimeGateway],

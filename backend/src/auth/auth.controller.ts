@@ -15,6 +15,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly oauthService: OAuthService,
+  ) {}
     private readonly usersService: UsersService,
     private readonly twoFactorService: TwoFactorService,)
   {}

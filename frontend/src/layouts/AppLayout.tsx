@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useEffect, useRef, useState } from 'react';
 import { createSocket } from '../api/socket';
+import { ChatWidget } from '../components/ChatWidget';
 
 const navItems = [
   { to: '/dashboard', label: 'Accueil' },
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/leaderboard', label: 'Classement' },
   { to: '/rules', label: 'Regles' },
   { to: '/tournaments', label: 'Tournois' },
+  { to: '/friends', label: 'Friends' },
 ];
 
 export function AppLayout() {
@@ -104,6 +106,7 @@ export function AppLayout() {
       <main className="page-enter mx-auto max-w-6xl px-4 py-8">
         <Outlet />
       </main>
+      <ChatWidget />
     </div>
   );
 }

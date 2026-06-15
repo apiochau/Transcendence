@@ -126,6 +126,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (userId) {
       this.onlineUsers.add(userId);
       this.server.emit('user:status', { userId, online:true });
+      void client.join(`user:${userId}`);
+      void client.join(`chat:global`);
+    }
+    this.logger.log('socket connected: ${client.id}');
     }
   }
 
@@ -182,6 +186,61 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     client.emit('room:left', { roomId: payload.roomId });
   }
 
+  @SubscribeMessage('chat:global')
+  async chatGlobal(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: { content: string },
+  ) {
+  const userId = client.data.userId as string | undefined;
+  if (!userId) return;
+
+  const content = (payload.content ?? '').trim();
+  if (content.length === 0 || content.length > 500) return;
+
+  const message = await this.prisma.message.create({
+    data: { content, senderId: userId, isGlobal: true },
+    include: {
+      sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+    },
+  });
+
+  this.server.to('chat:global').emit('chat:message', message);
+}
+
+@SubscribeMessage('chat:private')
+async chatPrivate(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() payload: { recipientId: string; content: string },
+) {
+  const userId = client.data.userId as string | undefined;
+  if (!userId) return;
+
+  const content = (payload.content ?? '').trim();
+  if (content.length === 0 || content.length > 500) return;
+  if (!payload.recipientId || payload.recipientId === userId) return;
+
+  const friendship = await this.prisma.friendship.findFirst({
+    where: {
+      status: 'ACCEPTED',
+      OR: [
+        { requesterId: userId, addresseeId: payload.recipientId },
+        { requesterId: payload.recipientId, addresseeId: userId },
+      ],
+    },
+  });
+  if (!friendship) return;
+
+  const message = await this.prisma.message.create({
+    data: { content, senderId: userId, recipientId: payload.recipientId },
+    include: {
+      sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+    },
+  });
+
+  this.server.to(`user:${userId}`).emit('chat:private-message', message);
+  this.server.to(`user:${payload.recipientId}`).emit('chat:private-message', message);
+}
+
   @SubscribeMessage('game:signal')
   gameSignal(@ConnectedSocket() client: Socket, @MessageBody() payload: GameSignalPayload) {
     if (payload.event === 'player:ready') {
@@ -191,6 +250,14 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     if (payload.event === 'suggestions:next') {
       this.generateSuggestionsForClient(client, payload.roomId);
+      return;
+    }
+
+    if (payload.event === 'suggestion:click') {
+      this.clickSuggestion(client, payload);
+      return;
+    }
+
       return;
     }
 
@@ -347,6 +414,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     const userId = this.getAuthenticatedUserId(client);
     const room = this.rooms.get(roomId);
 
+
+  private generateSuggestionsForClient(client: Socket, roomId: string) {
+    const userId = this.getAuthenticatedUserId(client);
+    const room = this.rooms.get(roomId);
+
     if (!userId || !room) {
       client.emit('game:error', { message: 'Room not found' });
       return;
@@ -498,6 +570,42 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       players: room.players.size,
       ready: Array.from(room.players).filter((userId) => this.getPlayerState(room, userId).ready).length,
       started: room.started,
+    });
+  }
+
+  private emitCurrentSuggestionsToPlayer(room: RoomState, userId: string) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
+      return;
+    }
+
+    this.emitToPlayer(room, userId, 'game:suggestions', {
+      suggestions: playerState.currentWordIds
+        .map((wordId) => this.wordService.getWord(wordId))
+        .filter((word): word is LocalWord => Boolean(word))
+        .map((word) => ({ wordId: word.id, word: word.text })),
+    });
+  }
+
+  private emitSessionState(roomId: string, room: RoomState, userId: string) {
+    const playerState = room.playerStates.get(userId);
+    if (!playerState) {
+      return;
+    }
+
+    const currentSuggestions = playerState.currentWordIds
+      .map((wordId) => this.wordService.getWord(wordId))
+      .filter((word): word is LocalWord => Boolean(word))
+      .map((word) => ({ wordId: word.id, word: word.text }));
+
+    this.emitToPlayer(room, userId, 'game:session-state', {
+      roomId,
+      started: room.started,
+      finished: room.finished,
+      suggestions: currentSuggestions,
+      history: playerState.clickedSuggestions,
+      cooldownMs: playerState.cooldownUntil ? Math.max(0, playerState.cooldownUntil - Date.now()) : 0,
+      opponentState: this.buildOpponentState(roomId, room, userId),
     });
   }
 
