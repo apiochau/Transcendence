@@ -486,7 +486,7 @@ docker compose logs -f postgres
 
 ### AI Usage
 
-Artificial intelligence tools (ChatGPT) were used during the development process for:
+Artificial intelligence tools were used during the development process for:
 
 * .....
 
@@ -519,6 +519,9 @@ Artificial intelligence tools (ChatGPT) were used during the development process
   - Built React UI components and game interface
   - Implemented game pages, routing, and state management
   - Integrated API calls and real-time updates
+  
+- **Member 5 — ...**
+  - ...
 
 ---
 
@@ -631,6 +634,9 @@ The database is structured around users, game sessions, collections, and matchma
 - **Member 4**
   - Built frontend UI and game interface
   - Integrated backend APIs and state management
+  
+- **Member 5 — ...**
+  - ...
 
 ---
 
