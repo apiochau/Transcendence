@@ -15,6 +15,8 @@ interface AuthUser {
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string | null;
 }
 
 @Injectable()
@@ -43,7 +45,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmail(dto.email) as (AuthUser & { passwordHash: string }) | null;
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -68,7 +70,7 @@ export class AuthService {
     const payload = await this.jwtService.verifyAsync(tempToken);
     if (!payload.twoFactorPending)
       throw new UnauthorizedException('Invalid temp token');
-    const user = await this.usersService.findById(payload.sub);
+    const user = await this.usersService.findById(payload.sub) as AuthUser | null;
     if (!user || !user.twoFactorSecret) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -76,39 +78,6 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException('Invalid TOTP code');
     }
-    return this.buildAuthResponse(user);
-  }
-
-  async loginWithOAuth(profile: RemoteOAuthProfile) {
-    if (!profile.email || profile.email === 'undefined' || profile.email === 'null') {
-      throw new UnauthorizedException('OAuth provider did not return an email address');
-    }
-
-    const existingOAuthUser = await this.usersService.findByOAuth(profile.provider, profile.providerUserId);
-    if (existingOAuthUser) {
-      return this.buildAuthResponse(existingOAuthUser);
-    }
-
-    const existingEmailUser = await this.usersService.findByEmail(profile.email);
-    if (existingEmailUser) {
-      const linkedUser = await this.usersService.linkOAuthAccount(existingEmailUser.id, profile.provider, profile.providerUserId, {
-        displayName: existingEmailUser.displayName ?? profile.displayName,
-        avatarUrl: existingEmailUser.avatarUrl ?? profile.avatarUrl,
-      });
-      return this.buildAuthResponse(linkedUser);
-    }
-
-    const username = await this.createAvailableUsername(profile.username);
-    const user = await this.usersService.create({
-      email: profile.email,
-      username,
-      displayName: profile.displayName,
-      avatarUrl: profile.avatarUrl,
-      oauthProvider: profile.provider,
-      oauthId: profile.providerUserId,
-      passwordHash: await bcrypt.hash(randomUUID(), 12),
-    });
-
     return this.buildAuthResponse(user);
   }
 

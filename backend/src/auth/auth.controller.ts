@@ -15,10 +15,9 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly oauthService: OAuthService,
-  ) {}
     private readonly usersService: UsersService,
-    private readonly twoFactorService: TwoFactorService,)
-  {}
+    private readonly twoFactorService: TwoFactorService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
@@ -94,14 +93,14 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async me(@CurrentUser() user: AuthenticatedUser) {
-    const dbUser = await this.usersService.findById(user.userId);
+    const dbUser = await this.usersService.findById(user.userId) as { id: string; email: string; username: string; displayName: string | null; avatarUrl: string | null; twoFactorEnabled?: boolean } | null;
     return {
       id: dbUser!.id,
       email: dbUser!.email,
       username: dbUser!.username,
       displayName: dbUser!.displayName,
       avatarUrl: dbUser!.avatarUrl,
-      twoFactorEnabled: dbUser!.twoFactorEnabled,
+      twoFactorEnabled: dbUser!.twoFactorEnabled ?? false,
     };
   }
 }

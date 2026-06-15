@@ -43,8 +43,12 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.2",
     "@types/passport-jwt": "^4.0.1",
-    "@types/multer": "^1.4.12",
     "@types/qrcode": "^1.5.6",
     "typescript": "^5.7.2"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "prisma@5.22.0": true
   }
 }

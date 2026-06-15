@@ -23,7 +23,6 @@ import { TwoFactorService } from './two-factor.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, OAuthService],
   providers: [AuthService, JwtStrategy, OAuthService, TwoFactorService],
   exports: [AuthService],
 })

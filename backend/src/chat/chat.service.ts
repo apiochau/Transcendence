@@ -13,7 +13,7 @@ export class ChatService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getGlobalHistory() {
-    const messages = await this.prisma.message.findMany({
+    const messages = await (this.prisma as any).message.findMany({
       where: { isGlobal: true },
       orderBy: { createdAt: 'desc' },
       take: HISTORY_LIMIT,
@@ -24,7 +24,7 @@ export class ChatService {
 
   async postGlobal(userId: string, content: string) {
     const trimmed = this.validateContent(content);
-    return this.prisma.message.create({
+    return (this.prisma as any).message.create({
       data: { senderId: userId, content: trimmed, isGlobal: true },
       include: senderSelect,
     });
@@ -32,7 +32,7 @@ export class ChatService {
 
   async getPrivateHistory(userId: string, otherUserId: string) {
     await this.assertFriends(userId, otherUserId);
-    const messages = await this.prisma.message.findMany({
+    const messages = await (this.prisma as any).message.findMany({
       where: {
         isGlobal: false,
         OR: [
@@ -53,19 +53,19 @@ export class ChatService {
     }
     const trimmed = this.validateContent(content);
     await this.assertFriends(userId, recipientId);
-    return this.prisma.message.create({
+    return (this.prisma as any).message.create({
       data: { senderId: userId, recipientId, content: trimmed, isGlobal: false },
       include: senderSelect,
     });
   }
 
   async deleteMessage(userId: string, messageId: string) {
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    const message = await (this.prisma as any).message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException('Message introuvable');
     if (message.senderId !== userId) {
       throw new ForbiddenException('Tu ne peux supprimer que tes propres messages');
     }
-    await this.prisma.message.delete({ where: { id: messageId } });
+    await (this.prisma as any).message.delete({ where: { id: messageId } });
     return { ok: true };
   }
 

@@ -1,5 +1,5 @@
 import { PrismaService } from '../prisma.service'
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { generateSecret, generate, verify, generateURI } from 'otplib';
 import * as QRCode from 'qrcode';
 
@@ -12,7 +12,7 @@ export class TwoFactorService {
         const secret = generateSecret();
         const otpauthUrl = generateURI({ label: user.email, issuer: 'Lexmon', secret });
         const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
-        await this.prisma.user.update({
+        await (this.prisma.user as any).update({
             where: { id: userId },
             data: { twoFactorSecret: secret },
 
@@ -21,7 +21,7 @@ export class TwoFactorService {
     }
 
     async enableTwoFactor(userId: string, token: string) {
-        const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+        const user = await (this.prisma.user as any).findUniqueOrThrow({ where: { id: userId } });
         if (!user.twoFactorSecret) {
             throw new BadRequestException('2FA not set up');
         }
@@ -29,7 +29,7 @@ export class TwoFactorService {
         if (!isValid) {
             throw new BadRequestException('Invalid TOTP code');
         }
-        await this.prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: true} });
+        await (this.prisma.user as any).update({ where: { id: userId }, data: { twoFactorEnabled: true } });
     }
 
     async verifyToken(secret: string, token: string): Promise<boolean> {
@@ -42,7 +42,7 @@ export class TwoFactorService {
     }
 
     async disableTwoFactor(userId: string, token: string) {
-        const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+        const user = await (this.prisma.user as any).findUniqueOrThrow({ where: { id: userId } });
         if (!user.twoFactorSecret) {
             throw new BadRequestException('2FA not set up');
         }
@@ -50,7 +50,7 @@ export class TwoFactorService {
         if (!isValid) {
             throw new BadRequestException('Invalid TOTP code');
         }
-        await this.prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
+        await (this.prisma.user as any).update({ where: { id: userId }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
     }
 
 }

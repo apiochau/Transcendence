@@ -324,7 +324,7 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
   }
 
   async getSentiment() {
-    const result = await this.prisma.feedback.groupBy({
+    const result = await (this.prisma as any).feedback.groupBy({
       by: ['sentiment'],
       where: {
         sentiment: {
@@ -336,7 +336,7 @@ async gamesOverTimeByRange(startDate: Date, endDate: Date) {
       },
     });
 
-    return result.map((item) => ({
+    return result.map((item: { sentiment: string | null; _count: { id: number } }) => ({
       sentiment: item.sentiment,
       count: item._count.id,
     }));

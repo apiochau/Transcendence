@@ -9,7 +9,12 @@ import { PrismaService } from '../prisma.service';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 
 import { pipeline } from '@xenova/transformers';
-import { SentimentType } from '@prisma/client';
+
+enum SentimentType {
+  POSITIVE = 'POSITIVE',
+  NEUTRAL = 'NEUTRAL',
+  NEGATIVE = 'NEGATIVE',
+}
 
 @Injectable()
 export class FeedbackService 
@@ -149,7 +154,7 @@ export class FeedbackService
     }
 
     const existingFeedback =
-      await this.prisma.feedback.findUnique({
+      await (this.prisma as any).feedback.findUnique({
         where: {
           userId_sessionId: {
             userId,
@@ -193,7 +198,7 @@ export class FeedbackService
       );
     }
 
-    return this.prisma.feedback.create({
+    return (this.prisma as any).feedback.create({
       data: {
         userId,
         sessionId: dto.sessionId,
