@@ -12,7 +12,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {prefix: '/uploads'});
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: config.get<string>('CORS_ORIGIN') ?? 'http://localhost',
+    origin: config.get<string>('CORS_ORIGIN') ?? 'https://localhost',
     credentials: true,
   });
   app.useGlobalPipes(
