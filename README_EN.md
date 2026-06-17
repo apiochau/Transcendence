@@ -546,24 +546,41 @@ The team followed a modular development approach:
 ## Technical Stack
 
 ### Frontend
-- 
-- 
+- React 18 with TypeScript
+- Vite, React Router, Zustand, Axios, Socket.IO Client
+- Tailwind CSS and Lucide React
 
 ### Backend
-- 
-- 
-
+- NestJS 10 with TypeScript
+- Socket.IO for real-time multiplayer communication
+- JWT, Passport, and bcrypt for authentication and security
+- Prisma ORM for database access and schema management
 
 ### Database
 
-- 
+- PostgreSQL 16
 
 **Justification:**
 
+The project adopts a modern full-stack architecture designed for scalability, maintainability, and real-time interaction. The frontend is built with React 18 and TypeScript, providing a responsive and type-safe user interface. Vite enables fast development and optimized builds, while Zustand manages client-side state efficiently. Socket.IO Client supports real-time gameplay features such as matchmaking and multiplayer sessions.
+
+On the backend, NestJS 10 offers a modular and structured architecture suitable for large applications. Socket.IO enables bidirectional real-time communication required for live matches. Authentication is secured through JWT, Passport, bcrypt, optional OAuth 2.0 providers (Google, GitHub, and 42), and TOTP-based two-factor authentication.
+
+PostgreSQL 16 is used as the primary relational database, while Prisma ORM simplifies database modeling, migrations, and type-safe queries. The entire application is containerized with Docker Compose and served through Nginx, ensuring a consistent deployment environment and easy scalability.
 
 ### Other Technologies
 
-- 
+- Docker & Docker Compose – Containerization and service orchestration.
+- Nginx – Reverse proxy for frontend, API, and WebSocket traffic.
+- OAuth 2.0 – Third-party authentication with Google, GitHub, and 42.
+- TOTP-based Two-Factor Authentication (2FA) – Additional account security.
+- WebSockets (Socket.IO) – Real-time communication for multiplayer gameplay.
+- JWT Authentication – Stateless user authentication and authorization.
+- Prisma Migrations & Schema Management – Database schema synchronization and management.
+
+**Justification:**
+
+Docker and Docker Compose provide a reproducible development and deployment environment. Nginx acts as a reverse proxy, routing HTTP and WebSocket requests to the appropriate services. OAuth 2.0 and TOTP-based 2FA enhance account security and authentication flexibility. Socket.IO enables real-time interactions required for matchmaking and multiplayer games. JWT is used for secure stateless authentication, while Prisma simplifies database schema management and migrations.
 
 ---
 
@@ -571,31 +588,110 @@ The team followed a modular development approach:
 
 ### Overview
 
-The database is structured around users, game sessions, collections, and matchmaking.
+The database is designed around player management, semantic word games, collections, matchmaking, tournaments, and social interactions. PostgreSQL is used as the primary database, while Prisma ORM manages schema definitions and database access.
 
 ### Main Tables
 
-- User
-  -
+#### User
 
-- GameSession
-  - 
+* Stores account information, authentication credentials, and profile data.
+* Supports OAuth authentication and optional two-factor authentication (2FA).
+* Maintains relationships with games, statistics, collections, friendships, notifications, messages, and tournaments.
 
-- CollectionWord
-  - 
+#### Game
 
-- Match
-  - 
+* Represents real-time multiplayer matches.
+* Stores participating players, winner information, room identifiers, game status, and timestamps.
+
+#### GameSession
+
+* Represents semantic word game sessions.
+* Stores the secret word, session state, displayed suggestions, and game progress.
+
+#### Word
+
+* Stores all words available in the game.
+* Contains semantic embeddings, rarity, value, category, and normalized text used for similarity calculations.
+
+#### WordCollectionItem
+
+* Represents words owned by players.
+* Tracks ownership, quantity, and acquisition history.
+
+### Additional Tables
+
+#### UserStats
+
+* Stores player statistics such as games played, wins, losses, and rating.
+
+#### Friendship
+
+* Manages friend requests and friendship relationships between users.
+
+#### Notification
+
+* Stores user notifications and read status.
+
+#### Message
+
+* Supports private and global messaging between users.
+
+#### Tournament
+
+* Stores tournament information and status.
+
+#### TournamentEntry
+
+* Associates players with tournaments.
+
+#### DailyMatchAttempt
+
+* Tracks daily match participation and enforces one attempt per day.
+
+#### WordStakeLock
+
+* Locks collection words used as stakes in Duel matchmaking.
+
+#### SuggestionHistory
+
+* Stores suggestion clicks, similarity scores, and player actions during game sessions.
+
+#### Feedback
+
+* Stores player feedback and sentiment analysis results.
 
 ### Relationships
 
-- 
+* A **User** can participate in multiple **Games** as Player One, Player Two, or Winner.
+* A **User** has one **UserStats** record.
+* A **User** can own multiple **WordCollectionItems**.
+* A **WordCollectionItem** belongs to one **User** and one **Word**.
+* A **GameSession** references one secret **Word**.
+* A **GameSession** contains multiple **SuggestionHistory** records.
+* A **SuggestionHistory** record references a single **Word**.
+* A **User** can submit multiple **Feedback** entries linked to game sessions.
+* A **Tournament** contains multiple **TournamentEntries**.
+* A **TournamentEntry** links one **User** to one **Tournament**.
+* A **User** can receive multiple **Notifications**.
+* A **Friendship** creates a relationship between two **Users**.
+* A **User** can have multiple **DailyMatchAttempt** records.
+* A **User** can create multiple **WordStakeLock** records for Duel matchmaking.
+* A **User** can send and receive multiple **Messages**.
 
 ---
 
 ## Features List
 
-- ...
+- User authentication and account management.
+- OAuth 2.0 and Two-Factor Authentication (2FA).
+- Semantic word-guessing gameplay.
+- Solo and real-time multiplayer game modes.
+- Training, Daily, and Duel matchmaking modes.
+- Word collection and reward system.
+- Collection-based leaderboard.
+- Friend and notification systems.
+- Tournament management.
+- Analytics and feedback tracking.
 
 ---
 
