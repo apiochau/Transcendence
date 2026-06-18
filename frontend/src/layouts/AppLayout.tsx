@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/auth.store';
 import { useEffect, useRef, useState } from 'react';
 import { createSocket } from '../api/socket';
 import { ChatWidget } from '../components/ChatWidget';
+import { Footer } from '../components/Footer';
 
 const navItems = [
   { to: '/dashboard', label: 'Accueil' },
@@ -106,6 +107,7 @@ export function AppLayout() {
       <main className="page-enter mx-auto max-w-6xl px-4 py-8">
         <Outlet />
       </main>
+      <Footer />
       <ChatWidget />
     </div>
   );

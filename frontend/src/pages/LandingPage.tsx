@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
+import { Footer } from '../components/Footer'
 
 export function LandingPage() {
   return (
-    <main className="min-h-screen bg-white text-ink">
+    <div className="min-h-screen bg-white text-ink">
       <section className="mx-auto grid min-h-screen max-w-6xl content-center gap-8 px-4 py-16 md:grid-cols-[1.1fr_0.9fr] md:items-center">
         <div className="page-enter">
           <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">Jeu de proximite semantique</p>
@@ -21,6 +22,7 @@ export function LandingPage() {
           ))}
         </div>
       </section>
-    </main>
+      <Footer />
+    </div>
   );
 }

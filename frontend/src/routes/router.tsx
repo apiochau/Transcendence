@@ -18,12 +18,16 @@ import { TournamentsPage } from '../pages/TournamentsPage';
 import { UserProfilePage } from '../pages/UserProfilePage';
 import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { PrivacyPolicyPage  } from '../pages/PrivacyPolicyPage';
+import { TermsOfServicePage } from '../pages/TermsOfServicePage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/oauth/callback', element: <OAuthCallbackPage /> },
+  { path: '/privacy-policy', element: <PrivacyPolicyPage /> },
+  { path: '/terms-of-service', element: <TermsOfServicePage /> },
   {
     element: <ProtectedRoute />,
     children: [
