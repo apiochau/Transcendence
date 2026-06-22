@@ -231,7 +231,7 @@ export class OAuthService {
   }
 
   private getFrontendUrl() {
-    return (this.config.get<string>('FRONTEND_URL') ?? this.config.get<string>('CORS_ORIGIN') ?? 'http://localhost:8080').replace(/\/$/, '');
+    return (this.config.get<string>('FRONTEND_URL') ?? this.config.get<string>('CORS_ORIGIN') ?? 'https://localhost').replace(/\/$/, '');
   }
 
   private normalizeUsername(value: string) {
