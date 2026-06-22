@@ -68,4 +68,19 @@ clean: down
 	echo "$(GREEN)=========================================================================$(NC)"; \
 	docker system prune -f
 
-.PHONY: all build start stop down logs clean ssl_prep install
+# help menu for all available rules
+help:
+	@echo "========================================================================="; \
+	echo "            TRANSCENDENCE SERVICE MANAGEMENT ORCHESTRATOR                "; \
+	echo "========================================================================="; \
+	echo "Available Rules:"
+	@echo "  make         - Trigger 'make start' (Auto-gen SSL and launch cluster)"
+	@echo "  make build   - Force re-compilation of all microservice Dockerfiles"
+	@echo "  make start   - Auto-verify SSL dependencies and launch cluster in detached mode"
+	@echo "  make stop    - Gracefully halt containers without stripping runtime layers"
+	@echo "  make down    - Strip network bridges and containers safely (Volumetric Safe)"
+	@echo "  make logs    - Enter live tail stream aggregation interface for all microservices"
+	@echo "  make clean   - Full stack teardown followed by a safe container/image cache prune"
+	@echo "========================================================================="; \
+
+.PHONY: all build start stop down logs clean ssl_prep install help

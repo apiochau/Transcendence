@@ -31,6 +31,8 @@ The objective of Lexmon is to create an educational and competitive semantic wor
 * Tournaments, friends, notifications, analytics, and feedback modules.
 * Local word embeddings: the game does not depend on an external API during matches.
 
+---
+
 ### Architecture and Technologies
 
 #### Frontend
@@ -56,10 +58,12 @@ The objective of Lexmon is to create an educational and competitive semantic wor
 * bcrypt
 
 #### Infrastructure
+* **Docker Compose & Linux Orchestration** - Advanced automated provision engine.
+* **HashiCorp Vault (v1.13.3)** - Isolated runtime memory secrets engine (No hardcoded credentials on disk or container environment states).
+* **Nginx Reversed Proxy && TLS terminal** - Secure perimeter traffic encryption via custom self-signed X.509 cryptographic configurations (TLSv1.2/TLSv1.3 forced compliance).
+* **OWASP ModSecurity Core Rule Set(WAF)** - Web Application Firewall actively embedded to inspect, drop, and mitigate malicious payloads (SQL Injection, Cross-Site Scripting).
 
-* Docker Compose
-* Nginx
-* Docker Volumes
+---
 
 ### Game Overview
 
@@ -120,6 +124,8 @@ sum(word.value * quantity)
 
 The leaderboard ranks players by total collection value and uses wins as a tiebreaker.
 
+---
+
 ### Project Structure
 
 ```text
@@ -152,8 +158,11 @@ The leaderboard ranks players by total collection value and uses wins as a tiebr
 │   │   ├── store
 │   │   └── types
 │   └── nginx.conf
+├── vault/init.sh
 ├── nginx/default.conf
 ├── docker-compose.yml
+├── Makefile
+├── install_deps.sh
 └── README.md
 ```
 
@@ -207,32 +216,52 @@ For local development:
 * npm 10+
 * PostgreSQL 16
 
+---
+
 ### Environment Configuration
 
-#### Backend Environment Variables
+To enforce high-level security perimeter controls, **no sensitive secrets (database passwords, JWT keys, OAuth client secrets) are stored in plain text on the filesystem.** Local configuration files are used strictly for non-sensitive networking routing metadata. The real production credentials are fully managed, isolated, and fetched in-memory from **HashiCorp Vault**.
 
-Create a `.env` file inside `backend/` based on `.env.example`.
+***Security Notice:** To seed the system safely, you must create a local `.env` file at the root level of the project (which is strictly `gitignored`) to pass your production credentials into the Vault injection script during provisioning, ensuring zero hardcoded secrets exist within the repository.*
 
-Important variables:
+```.env_example
+# database postgres
+POSTGRES_USER=lexmon
+POSTGRES_PASSWORD=lexmon
+POSTGRES_DB=lexmon
 
-```env
-DATABASE_URL=
-JWT_SECRET=
-JWT_EXPIRES_IN=
-CORS_ORIGIN=
-FRONTEND_URL=
-OAUTH_CALLBACK_BASE_URL=
-OAUTH_GOOGLE_CLIENT_ID=
-OAUTH_GOOGLE_CLIENT_SECRET=
-OAUTH_GITHUB_CLIENT_ID=
-OAUTH_GITHUB_CLIENT_SECRET=
-OAUTH_42_CLIENT_ID=
-OAUTH_42_CLIENT_SECRET=
+# jwt
+JWT_SECRET=change-me-in-production
+
+# OAuth
+OAUTH_GOOGLE_CLIENT_ID="your-google-id"
+OAUTH_GOOGLE_CLIENT_SECRET="your-google-secret"
+OAUTH_GITHUB_CLIENT_ID="your-github-id"
+OAUTH_GITHUB_CLIENT_SECRET="your-github-secret"
+OAUTH_42_CLIENT_ID="your-42-id"
+OAUTH_42_CLIENT_SECRET="your-42-secret"
+
 ```
 
-#### Frontend Environment Variables
+#### Backend Environment Variables (`backend/.env`)
 
-Create a `.env` file inside `frontend/`.
+Create a `.env` file inside `backend/` using these exact non-sensitive configurations:
+
+```env
+# Only non-sensitive routing and framework parameters allowed
+NODE_ENV=production
+PORT=3000
+JWT_EXPIRES_IN=1d
+CORS_ORIGIN=https://localhost
+FRONTEND_URL=https://localhost
+OAUTH_CALLBACK_BASE_URL=https://localhost/api
+VAULT_ADDR=http://localhost:8200
+DB_HOST=localhost
+```
+
+#### Frontend Environment Variables (`frontend/.env`)
+
+Create a `.env` file inside `frontend/`:
 
 ```env
 VITE_API_URL=/api
@@ -243,76 +272,80 @@ VITE_SOCKET_URL=http://localhost:8080
 
 Register the following callback URLs:
 
-```text
-Google: http://localhost:8080/api/auth/oauth/google/callback
-GitHub: http://localhost:8080/api/auth/oauth/github/callback
-42: http://localhost:8080/api/auth/oauth/42/callback
+- Google: `https://localhost/api/auth/oauth/google/callback`
+- GitHub: `https://localhost/api/auth/oauth/github/callback`
+- 42: `https://localhost/api/auth/oauth/42/callback`
+
+*OAuth providers remain hidden until valid credentials are configured.*
+
+#### Secure Dynamic Credentials (Managed inside Vault via `vault/init.sh`)
+During orchestration, your initialization routine automatically seeds HashiCorp Vault's in-memory storage. The system generates, injects, and completely manages these keys inside isolated RAM:
+* `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+* `JWT_SECRET`
+* `OAUTH_(GOOGLE/GITHUB/42)_CLIENT_ID` & `OAUTH_(GOOGLE/GITHUB/42)_CLIENT_SECRET`
+
+<!-- as the provided .env_example -->
+
+---
+
+
+
+### Running the Project with Linux/Mac Automation (Production Staging)
+The project includes an ANSI-colored GNU Makefile and initialization utilities to completely automate dependencies and security provisioning securely.
+
+#### 1. Full Core Installation & Build
+To install local dependencies inside your sub-repositories, automatically issue hardened local SSL certificates with correct Linux access masks (`644`), pull secrets configurations into Vault memory, and boot the entire network bridge, run:
+```bash
+make
+```
+#### 2. Fine-Grained Operational Control Rules
+* **Rebuild Service Layouts**: `make build`
+
+* **Stop Cluster Gracefully (Preserves State Memory)**: `make stop`
+
+* **Tear Down Networking Infrastructure Safely**: `make down`
+
+* **Stream Aggregated Container Output Streams**: `make logs`
+
+* **Secure Environment Clean (Prunes caches without wiping persistent PostgreSQL state volumes)**: `make clean`
+
+#### 3. Accessing the Application
+Once the cluster logs report that all services are online:
+
+* Open your browser and navigate to: `https://localhost`
+
+* Note on Self-Signed Certs: Click Advanced → Proceed/Accept Risk to bypass the development certificate warning.
+
+---
+
+### Installation & Local Host Development
+If you want to run the application components locally on your host machine for debugging or rapid development without Docker isolation containers, follow this workflow:
+
+#### 1. Automated Host Installation
+
+Run the root automated installation target. This triggers a green ANSI shell utility script that cleanly updates your workspace directories, handles cross-repo packages, and generates local architecture-specific Prisma runtime compilation hooks:
+
+```bash
+make install
 ```
 
-OAuth providers remain hidden until valid credentials are configured.
+#### 2. Running Individual Development Engines Locally
 
-### Installation
+Because the backend uses an adaptive programmatic synchronization step, running development watchers locally will dynamically target your exposed ports.
 
-Clone the repository:
-
-```sh
-git clone <repository-url>
-cd lexmon
-```
-
-Configure environment variables using the provided `.env.example` files.
-
-### Running the Project with Docker
-
-Build and start all services:
-
-```sh
-docker compose up --build
-```
-
-Open:
-
-```text
-http://localhost:8080
-```
-
-Run in background:
-
-```sh
-docker compose up -d --build
-```
-
-Stop services:
-
-```sh
-docker compose down
-```
-
-Remove all persistent data:
-
-```sh
-docker compose down -v
-```
-
-### Local Development
-
-Backend:
-
-```sh
+**Launch Backend Development Server (with live watch hot-reload):**
+```bash
 cd backend
-npm install
-npm run prisma:generate
-npm run build
 npm run start:dev
 ```
+*Note: This sequence automatically reads credentials securely over your host's network bridge, performs an incremental runtime `prisma db push` schema sync, and launches the NestJS HTTP/WebSocket routing tables safely.*
 
-Frontend:
-
-```sh
+**Lauch Frontend Development Server:**
+```bash
 cd frontend
-npm install
 npm run dev
 ```
+---
 
 ### Main HTTP API
 
@@ -390,34 +423,6 @@ npm run test:similarity
 npm run test:game
 ```
 
-### Useful Commands
-
-#### Frontend
-
-```sh
-cd frontend
-npm install
-npm run build
-npm run dev
-```
-
-#### Backend
-
-```sh
-cd backend
-npm install
-npm run build
-npm run start:dev
-```
-
-#### Prisma
-
-```sh
-cd backend
-npm run prisma:generate
-npm run prisma:push
-```
-
 ### Embeddings and Local Dictionary
 
 Embeddings are stored in:
@@ -439,6 +444,8 @@ npm run build:embeddings -- \
 
 Gameplay does not rely on external AI APIs.
 
+---
+
 ### Persistent Data
 
 Docker volumes:
@@ -446,28 +453,15 @@ Docker volumes:
 * lexmon-postgres-data
 * uploads-data
 
-Inspect containers:
-
-```sh
-docker compose ps
-```
-
-View logs:
-
-```sh
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f nginx
-docker compose logs -f postgres
-```
 
 ### Maintenance Notes
 
-* The project uses NestJS 10.
-* JWT secrets must be changed in production.
-* Daily mode uses the Europe/Paris timezone.
-* Collection data is stored in PostgreSQL.
-* Deleting PostgreSQL volumes removes all player data.
+* **The project uses NestJS 10.**
+* **JWT secrets must be changed in production.**
+* **Daily mode uses the Europe/Paris timezone.**
+* **Collection data is stored in PostgreSQL.**
+* **Deleting PostgreSQL volumes removes all player data.**
+* **Automated Programmatic Database Synchronization** — The application utilizes native Node.js sub-process compilation execution flags inside main.ts to bridge runtime settings immediately after Vault authentication, creating dynamic, type-safe database schemas with Prisma while keeping passwords safely inside isolated memory vector
 
 ---
 
@@ -519,9 +513,11 @@ Artificial intelligence tools were used during the development process for:
   - Built React UI components and game interface
   - Implemented game pages, routing, and state management
   - Integrated API calls and real-time updates
-  
-- **Member 5 — ...**
-  - ...
+
+- **Qizhang — Security Engineer**
+  - Managed HashiCorp Vault to keep database passwords safe in memory.
+  - Set up ModSecurity WAF and Nginx to block malicious web attacks.
+  - Enabled HTTPS encryption (TLS 1.2/1.3) and secure browser headers.
 
 ---
 
@@ -529,8 +525,7 @@ Artificial intelligence tools were used during the development process for:
 
 ### Work Organization
 
-The team followed a modular development approach:
-...
+The team followed a modular development approach.
 
 ### Tools Used
 
@@ -560,8 +555,6 @@ The team followed a modular development approach:
 
 - PostgreSQL 16
 
-**Justification:**
-
 The project adopts a modern full-stack architecture designed for scalability, maintainability, and real-time interaction. The frontend is built with React 18 and TypeScript, providing a responsive and type-safe user interface. Vite enables fast development and optimized builds, while Zustand manages client-side state efficiently. Socket.IO Client supports real-time gameplay features such as matchmaking and multiplayer sessions.
 
 On the backend, NestJS 10 offers a modular and structured architecture suitable for large applications. Socket.IO enables bidirectional real-time communication required for live matches. Authentication is secured through JWT, Passport, bcrypt, optional OAuth 2.0 providers (Google, GitHub, and 42), and TOTP-based two-factor authentication.
@@ -570,15 +563,15 @@ PostgreSQL 16 is used as the primary relational database, while Prisma ORM simpl
 
 ### Other Technologies
 
-- Docker & Docker Compose – Containerization and service orchestration.
-- Nginx – Reverse proxy for frontend, API, and WebSocket traffic.
-- OAuth 2.0 – Third-party authentication with Google, GitHub, and 42.
-- TOTP-based Two-Factor Authentication (2FA) – Additional account security.
-- WebSockets (Socket.IO) – Real-time communication for multiplayer gameplay.
-- JWT Authentication – Stateless user authentication and authorization.
-- Prisma Migrations & Schema Management – Database schema synchronization and management.
+- **Docker & Docker Compose** – Containerization and service orchestration.
+- **Nginx & OWASP ModSecurity** — Reverse proxy perimeter gate and application shielding.
+- **HashiCorp Vault** — Secured dynamic secrets repository engine.
+- **OAuth 2.0** – Third-party authentication with Google, GitHub, and 42.
+- **TOTP-based Two-Factor Authentication (2FA)** – Additional account security.
+- **WebSockets (Socket.IO)** – Real-time communication for multiplayer gameplay.
+- **JWT Authentication** – Stateless user authentication and authorization.
+- **Prisma Migrations & Schema Management** – Database schema synchronization and management.
 
-**Justification:**
 
 Docker and Docker Compose provide a reproducible development and deployment environment. Nginx acts as a reverse proxy, routing HTTP and WebSocket requests to the appropriate services. OAuth 2.0 and TOTP-based 2FA enhance account security and authentication flexibility. Socket.IO enables real-time interactions required for matchmaking and multiplayer games. JWT is used for secure stateless authentication, while Prisma simplifies database schema management and migrations.
 
@@ -699,15 +692,15 @@ The database is designed around player management, semantic word games, collecti
 
 ### Major Modules (2 pts each)
 
-- 
+-
 
 ### Minor Modules (1 pt each)
 
-- 
+-
 
 ### Implementation Notes
 - (Justification for each module choice, How each module was implemented, Which team member(s) worked on each module.)
-- 
+-
 
 ---
 
@@ -730,14 +723,11 @@ The database is designed around player management, semantic word games, collecti
 - **Member 4**
   - Built frontend UI and game interface
   - Integrated backend APIs and state management
-  
-- **Member 5 — ...**
-  - ...
 
----
-
-
----
+- **Qizhang**
+  - Linked Vault secrets to the Prisma database engine safely on boot.
+  - Configured Nginx to encrypt web traffic and handle secure handshakes.
+  - Set up firewall rules to automatically drop SQL injection and XSS exploits
 
 ## Current State
 
