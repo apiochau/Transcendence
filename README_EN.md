@@ -490,31 +490,31 @@ Artificial intelligence tools were used during the development process for:
 
 ## Team Information
 
-### Roles and Responsibilities
+### ⚠️Roles and Responsibilities
 
-> ⚠️ Replace names below with actual team members
 
-- **Member 1 — Product Owner (PO) / Backend Developer**
+- **apiochau — Product Owner (PO) / Developer**
   - Defined project scope and core game mechanics
   - Supervised feature priorities and delivery
-  - Contributed to backend architecture and API design
+  - ⚠️Implement features and modules
 
-- **Member 2 — Project Manager (PM) / Full Stack Developer**
-  - Organized tasks and sprint planning
-  - Managed GitHub Issues and project milestones
-  - Worked on both frontend integration and backend coordination
-
-- **Member 3 — Tech Lead**
+- **cossadon — Tech Lead / Developer**
   - Designed system architecture (NestJS, WebSocket, database structure)
   - Reviewed pull requests and ensured code quality
   - Made key technical decisions (Prisma, Socket.IO, embeddings system)
+  - ⚠️Implement features and modules
 
-- **Member 4 — Frontend Developer**
-  - Built React UI components and game interface
-  - Implemented game pages, routing, and state management
-  - Integrated API calls and real-time updates
+- **cwang — Project Manager (PM) / Developer**
+  - Organizes team meetings and planning sessions.
+  - Tracks progress and deadlines.
+  - Implement data analytics module and feedback sentiment analysis
 
-- **Qizhang — Security Engineer**
+- **luxu — Developer**
+  - Implement standard user management (registration, authentication, profile management)
+  - Develop game statistics and match history tracking system
+  - Implement Two-Factor Authentication (2FA) system
+
+- **qizhang — Developer (Security Engineer)**
   - Managed HashiCorp Vault to keep database passwords safe in memory.
   - Set up ModSecurity WAF and Nginx to block malicious web attacks.
   - Enabled HTTPS encryption (TLS 1.2/1.3) and secure browser headers.
