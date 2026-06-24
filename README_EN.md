@@ -618,6 +618,7 @@ The database is designed around player management, semantic word games, collecti
 #### UserStats
 
 * Stores player statistics such as games played, wins, losses, and rating.
+* Each User has exactly one UserStats record.
 
 #### Friendship
 
@@ -631,6 +632,9 @@ The database is designed around player management, semantic word games, collecti
 
 * Supports private and global messaging between users.
 
+   ##### * sender → User
+   ##### * recipient → User (optional for global messages)
+
 #### Tournament
 
 * Stores tournament information and status.
@@ -638,6 +642,7 @@ The database is designed around player management, semantic word games, collecti
 #### TournamentEntry
 
 * Associates players with tournaments.
+   ##### *Many-to-many relationship (User ↔ Tournament)
 
 #### DailyMatchAttempt
 
@@ -645,33 +650,49 @@ The database is designed around player management, semantic word games, collecti
 
 #### WordStakeLock
 
-* Locks collection words used as stakes in Duel matchmaking.
+* Handles duel matchmaking staking system. Tracks locked words, room binding, status (QUEUED / SETTLED), timestamps
 
 #### SuggestionHistory
 
-* Stores suggestion clicks, similarity scores, and player actions during game sessions.
+* Stores word suggestions, similarity scores, player actions and timestamps.
 
 #### Feedback
 
 * Stores player feedback and sentiment analysis results.
 
-### Relationships
+### Relationships Summary
 
-* A **User** can participate in multiple **Games** as Player One, Player Two, or Winner.
-* A **User** has one **UserStats** record.
-* A **User** can own multiple **WordCollectionItems**.
-* A **WordCollectionItem** belongs to one **User** and one **Word**.
-* A **GameSession** references one secret **Word**.
-* A **GameSession** contains multiple **SuggestionHistory** records.
-* A **SuggestionHistory** record references a single **Word**.
-* A **User** can submit multiple **Feedback** entries linked to game sessions.
-* A **Tournament** contains multiple **TournamentEntries**.
-* A **TournamentEntry** links one **User** to one **Tournament**.
-* A **User** can receive multiple **Notifications**.
-* A **Friendship** creates a relationship between two **Users**.
-* A **User** can have multiple **DailyMatchAttempt** records.
-* A **User** can create multiple **WordStakeLock** records for Duel matchmaking.
-* A **User** can send and receive multiple **Messages**.
+User → UserStats (1:1)
+
+User → Game (1:N as PlayerOne / PlayerTwo / Winner)
+
+User → Friendship (1:N sent / received)
+
+User → Message (1:N sent / received)
+
+User → Notification (1:N)
+
+User → WordCollectionItem (1:N)
+
+User → TournamentEntry (1:N)
+
+User → DailyMatchAttempt (1:N)
+
+User → WordStakeLock (1:N)
+
+User → Feedback (1:N)
+
+GameSession → Word (1:1 secret word)
+
+GameSession → SuggestionHistory (1:N)
+
+GameSession → Feedback (1:N)
+
+Tournament → TournamentEntry (1:N)
+
+Word → WordCollectionItem (1:N)
+
+Word → SuggestionHistory (1:N)
 
 ---
 
