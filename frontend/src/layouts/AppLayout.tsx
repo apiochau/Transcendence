@@ -18,24 +18,35 @@ const navItems = [
   { to: '/friends', label: 'Friends' },
 ];
 
+
 export function AppLayout() {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+
+  // separated states (important fix)
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<ReturnType<typeof createSocket> | null>(null);
 
+  // close user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        setUserMenuOpen(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // socket init
   useEffect(() => {
     const socket = createSocket();
     socketRef.current = socket;
@@ -44,71 +55,223 @@ export function AppLayout() {
     return () => {
       socket.disconnect();
       socketRef.current = null;
-    }
+    };
   }, []);
 
   return (
     <div className="min-h-screen bg-panel text-ink">
-      <header className="sticky top-0 z-20 border-b border-slate-700 bg-slate-950/95 text-ink shadow-[0_10px_30px_rgb(0_0_0_/_0.28)] backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <NavLink to="/dashboard" className="text-lg font-semibold transition hover:text-accent">Lexmon</NavLink>
-          <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
+    <header className="relative sticky top-0 z-20 border-b border-slate-700 bg-slate-950/95 text-ink shadow backdrop-blur">        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+
+          {/* Logo */}
+          <NavLink
+            to="/dashboard"
+            className="text-lg font-semibold transition hover:text-accent"
+            onClick={() => setMobileOpen(false)}
+          >
+            Lexmon
+          </NavLink>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `rounded-md px-2 py-1 transition hover:-translate-y-0.5 hover:text-ink ${
-                    isActive ? 'bg-slate-100 text-accent shadow-sm' : 'text-slate-600'
+                  `rounded-md px-2 py-1 transition hover:text-ink ${
+                    isActive
+                      ? 'bg-slate-100 text-accent'
+                      : 'text-slate-600'
                   }`
                 }
+                onClick={() => setMobileOpen(false)}
               >
                 {item.label}
               </NavLink>
             ))}
           </nav>
-          <div className="relative" ref={menuRef}>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden px-3 py-2 border border-slate-600 rounded-md text-sm"
+            onClick={() => setMobileOpen((v) => !v)}
+          >
+            ☰
+          </button>
+
+          {/* User menu */}
+          <div className="relative" ref={userMenuRef}>
             <button
               type="button"
-              onClick={() => setMenuOpen((prev) => !prev)}
+              onClick={() => setUserMenuOpen((v) => !v)}
               className="motion-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium"
-              >
-                {user?.username ?? 'Compte'} ▾
-              </button>
+            >
+              {user?.username ?? 'Compte'} ▾
+            </button>
 
-              {menuOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-md border border-slate-700 bg-slate-900 py-1 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => { navigate('/profile'); setMenuOpen(false);}}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
-                    >
-                      Mon profil
-                    </button>
-                    <button
-                    type="button"
-                    onClick={() => { navigate('/settings'); setMenuOpen(false);}}
-                    className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
-                    >
-                      Paramètres
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { logout(); navigate('/login'); setMenuOpen(false); }}
-                      className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
-                      >
-                        Déconnexion
-                      </button>
-                    </div>
-              )}
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-2 w-44 rounded-md border border-slate-700 bg-slate-900 py-1 shadow-lg z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/profile');
+                    setUserMenuOpen(false);
+                    setMobileOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Mon profil
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate('/settings');
+                    setUserMenuOpen(false);
+                    setMobileOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Paramètres
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                    setUserMenuOpen(false);
+                    setMobileOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+                >
+                  Déconnexion
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Mobile nav */}
+        {mobileOpen && (
+        <div className="md:hidden absolute left-0 right-0 top-full border-t border-slate-800 bg-slate-950 px-4 py-3 flex flex-col gap-2 z-50">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => setMobileOpen(false)}
+                className="text-sm text-slate-300 hover:text-white"
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        )}
       </header>
+
       <main className="page-enter mx-auto max-w-6xl px-4 py-8">
         <Outlet />
       </main>
+
       <Footer />
       <ChatWidget />
     </div>
   );
 }
+
+
+// export function AppLayout() {
+//   const navigate = useNavigate();
+//   const logout = useAuthStore((state) => state.logout);
+//   const user = useAuthStore((state) => state.user);
+//   const [menuOpen, setMenuOpen] = useState(false);
+//   const menuRef = useRef<HTMLDivElement>(null);
+//   const socketRef = useRef<ReturnType<typeof createSocket> | null>(null);
+
+//   useEffect(() => {
+//     function handleClickOutside(e: MouseEvent) {
+//       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+//         setMenuOpen(false);
+//       }
+//     }
+//     document.addEventListener('mousedown', handleClickOutside);
+//     return () => document.removeEventListener('mousedown', handleClickOutside);
+//   }, []);
+
+//   useEffect(() => {
+//     const socket = createSocket();
+//     socketRef.current = socket;
+//     socket.connect();
+
+//     return () => {
+//       socket.disconnect();
+//       socketRef.current = null;
+//     }
+//   }, []);
+
+//   return (
+//     <div className="min-h-screen bg-panel text-ink">
+//       <header className="sticky top-0 z-20 border-b border-slate-700 bg-slate-950/95 text-ink shadow-[0_10px_30px_rgb(0_0_0_/_0.28)] backdrop-blur">
+//         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+//           <NavLink to="/dashboard" className="text-lg font-semibold transition hover:text-accent">Lexmon</NavLink>
+//           <nav className="hidden items-center gap-4 text-sm font-medium md:flex">
+//             {navItems.map((item) => (
+//               <NavLink
+//                 key={item.to}
+//                 to={item.to}
+//                 className={({ isActive }) =>
+//                   `rounded-md px-2 py-1 transition hover:-translate-y-0.5 hover:text-ink ${
+//                     isActive ? 'bg-slate-100 text-accent shadow-sm' : 'text-slate-600'
+//                   }`
+//                 }
+//               >
+//                 {item.label}
+//               </NavLink>
+//             ))}
+//           </nav>
+//           <div className="relative" ref={menuRef}>
+//             <button
+//               type="button"
+//               onClick={() => setMenuOpen((prev) => !prev)}
+//               className="motion-button rounded-md border border-slate-300 px-3 py-2 text-sm font-medium"
+//               >
+//                 {user?.username ?? 'Compte'} ▾
+//               </button>
+
+//               {menuOpen && (
+//                 <div className="absolute right-0 mt-2 w-44 rounded-md border border-slate-700 bg-slate-900 py-1 shadow-lg">
+//                   <button
+//                     type="button"
+//                     onClick={() => { navigate('/profile'); setMenuOpen(false);}}
+//                     className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+//                     >
+//                       Mon profil
+//                     </button>
+//                     <button
+//                     type="button"
+//                     onClick={() => { navigate('/settings'); setMenuOpen(false);}}
+//                     className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+//                     >
+//                       Paramètres
+//                     </button>
+//                     <button
+//                       type="button"
+//                       onClick={() => { logout(); navigate('/login'); setMenuOpen(false); }}
+//                       className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800 hover:text-white"
+//                       >
+//                         Déconnexion
+//                       </button>
+//                     </div>
+//               )}
+//           </div>
+//         </div>
+//       </header>
+      
+//       <main className="page-enter mx-auto max-w-6xl px-4 py-8">
+//         <Outlet />
+//       </main>
+//       <Footer />
+//       <ChatWidget />
+//     </div>
+//   );
+// }
