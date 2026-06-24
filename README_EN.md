@@ -525,7 +525,9 @@ Artificial intelligence tools were used during the development process for:
 
 ### Work Organization
 
-The team followed a modular development approach.
+To efficiently manage the complexity of the project, the team adopted a modular development strategy. Tasks were distributed according to each member's strengths and interests. While individual modules were developed independently, regular synchronization meetings were held to discuss progress, resolve blockers, and coordinate integration efforts.
+
+Version control workflows and pull-request reviews were used to maintain code quality and ensure consistency across the project. This organization allowed multiple features to be developed in parallel while minimizing merge conflicts and integration issues.
 
 ### Tools Used
 
@@ -692,11 +694,23 @@ The database is designed around player management, semantic word games, collecti
 
 ### Major Modules (2 pts each)
 
--
+**User Management**
+- Standard user management and authentication.
+
+**Data and Analytics**
+- Advanced analytics dashboard with data visualization.
+
+**Cybersecurity**
+- Implement WAF/ModSecurity (hardened) + HashiCorp Vault for secrets.
 
 ### Minor Modules (1 pt each)
 
--
+**User Management**
+- Game statistics and match history
+- Implement a complete 2FA (Two-Factor Authentication) system for the users.
+
+**Artificial Intelligence**
+- Sentiment analysis for user-generated content.
 
 ### Implementation Notes
 - (Justification for each module choice, How each module was implemented, Which team member(s) worked on each module.)
