@@ -61,6 +61,8 @@ logs:
 	@echo -e "$(GREEN)Streaming logs... (Press Ctrl+C to quit)$(NC)"
 	-$(COMPOSE) logs -f
 
+status:
+	$(COMPOSE) ps
 # safly stop containers and prune system garbage
 clean: down
 	@echo "$(GREEN)=========================================================================$(NC)"; \
@@ -80,7 +82,8 @@ help:
 	@echo "  make stop    - Gracefully halt containers without stripping runtime layers"
 	@echo "  make down    - Strip network bridges and containers safely (Volumetric Safe)"
 	@echo "  make logs    - Enter live tail stream aggregation interface for all microservices"
+	@echo "  make status  - Show status of all running containers"
 	@echo "  make clean   - Full stack teardown followed by a safe container/image cache prune"
 	@echo "========================================================================="; \
 
-.PHONY: all build start stop down logs clean ssl_prep install help
+.PHONY: all build start stop down logs clean ssl_prep install help status
