@@ -137,7 +137,9 @@ The leaderboard ranks players by total collection value and uses wins as a tiebr
 │   ├── src
 │   │   ├── analytics
 │   │   ├── auth
+│   │   ├── chat
 │   │   ├── collection
+│   │   ├── common
 │   │   ├── feedback
 │   │   ├── friends
 │   │   ├── game
@@ -176,16 +178,18 @@ The leaderboard ranks players by total collection value and uses wins as a tiebr
 * Collection
 * Stats
 * Friends
+* Chat
 * Notifications
 * Tournaments
 * Analytics
 * Feedback
-* Settings
+* Common
 
 ### Frontend Pages
 
 * Landing Page
 * Login / Register
+* OAuth Callback
 * Dashboard
 * Rules
 * Solo Mode
@@ -194,8 +198,13 @@ The leaderboard ranks players by total collection value and uses wins as a tiebr
 * Collection
 * Leaderboard
 * Profile
+* User Profile (public)
+* Settings
+* Friends
 * Analytics
 * Tournaments
+* Privacy Policy
+* Terms of Service
 
 ---
 
@@ -265,7 +274,7 @@ Create a `.env` file inside `frontend/`:
 
 ```env
 VITE_API_URL=/api
-VITE_SOCKET_URL=http://localhost:8080
+VITE_SOCKET_URL=https://localhost
 ```
 
 #### OAuth Setup
@@ -340,7 +349,7 @@ npm run start:dev
 ```
 *Note: This sequence automatically reads credentials securely over your host's network bridge, performs an incremental runtime `prisma db push` schema sync, and launches the NestJS HTTP/WebSocket routing tables safely.*
 
-**Lauch Frontend Development Server:**
+**Launch Frontend Development Server:**
 ```bash
 cd frontend
 npm run dev
@@ -482,7 +491,14 @@ Docker volumes:
 
 Artificial intelligence tools were used during the development process for:
 
-* .....
+* Learning full-stack concepts and understanding the tech stack (React, NestJS, Prisma, Socket.IO) during the early stages of the project.
+* Analyzing module selection and evaluating the compatibility and coherence of chosen modules.
+* Debugging deployment issues.
+* Understanding and explaining unfamiliar technologies.
+* Drafting documentation and README mark down review.
+* Reviewing code logic and identifying root causes of runtime errors.
+
+All AI-generated suggestions were reviewed, tested, and adapted by team members before integration. AI was not used to generate application source code directly.
 
 ## Team & Project Report
 
@@ -490,31 +506,31 @@ Artificial intelligence tools were used during the development process for:
 
 ## Team Information
 
-### ⚠️Roles and Responsibilities
+### Roles and Responsibilities
 
+> ⚠️ Replace names below with actual team members
 
-- **apiochau — Product Owner (PO) / Developer**
+- **Member 1 — Product Owner (PO) / Backend Developer**
   - Defined project scope and core game mechanics
   - Supervised feature priorities and delivery
-  - ⚠️Implement features and modules
+  - Contributed to backend architecture and API design
 
-- **cossadon — Tech Lead / Developer**
+- **Member 2 — Project Manager (PM) / Full Stack Developer**
+  - Organized tasks and sprint planning
+  - Managed GitHub Issues and project milestones
+  - Worked on both frontend integration and backend coordination
+
+- **Member 3 — Tech Lead**
   - Designed system architecture (NestJS, WebSocket, database structure)
   - Reviewed pull requests and ensured code quality
   - Made key technical decisions (Prisma, Socket.IO, embeddings system)
-  - ⚠️Implement features and modules
 
-- **cwang — Project Manager (PM) / Developer**
-  - Organizes team meetings and planning sessions.
-  - Tracks progress and deadlines.
-  - Implement data analytics module and feedback sentiment analysis
+- **Member 4 — Frontend Developer**
+  - Built React UI components and game interface
+  - Implemented game pages, routing, and state management
+  - Integrated API calls and real-time updates
 
-- **luxu — Developer**
-  - Implement standard user management (registration, authentication, profile management)
-  - Develop game statistics and match history tracking system
-  - Implement Two-Factor Authentication (2FA) system
-
-- **qizhang — Developer (Security Engineer)**
+- **Qizhang — Security Engineer**
   - Managed HashiCorp Vault to keep database passwords safe in memory.
   - Set up ModSecurity WAF and Nginx to block malicious web attacks.
   - Enabled HTTPS encryption (TLS 1.2/1.3) and secure browser headers.
@@ -525,9 +541,7 @@ Artificial intelligence tools were used during the development process for:
 
 ### Work Organization
 
-To efficiently manage the complexity of the project, the team adopted a modular development strategy. Tasks were distributed according to each member's strengths and interests. While individual modules were developed independently, regular synchronization meetings were held to discuss progress, resolve blockers, and coordinate integration efforts.
-
-Version control workflows and pull-request reviews were used to maintain code quality and ensure consistency across the project. This organization allowed multiple features to be developed in parallel while minimizing merge conflicts and integration issues.
+The team followed a modular development approach.
 
 ### Tools Used
 
@@ -618,7 +632,6 @@ The database is designed around player management, semantic word games, collecti
 #### UserStats
 
 * Stores player statistics such as games played, wins, losses, and rating.
-* Each User has exactly one UserStats record.
 
 #### Friendship
 
@@ -632,9 +645,6 @@ The database is designed around player management, semantic word games, collecti
 
 * Supports private and global messaging between users.
 
-   ##### * sender → User
-   ##### * recipient → User (optional for global messages)
-
 #### Tournament
 
 * Stores tournament information and status.
@@ -642,7 +652,6 @@ The database is designed around player management, semantic word games, collecti
 #### TournamentEntry
 
 * Associates players with tournaments.
-   ##### *Many-to-many relationship (User ↔ Tournament)
 
 #### DailyMatchAttempt
 
@@ -650,49 +659,33 @@ The database is designed around player management, semantic word games, collecti
 
 #### WordStakeLock
 
-* Handles duel matchmaking staking system. Tracks locked words, room binding, status (QUEUED / SETTLED), timestamps
+* Locks collection words used as stakes in Duel matchmaking.
 
 #### SuggestionHistory
 
-* Stores word suggestions, similarity scores, player actions and timestamps.
+* Stores suggestion clicks, similarity scores, and player actions during game sessions.
 
 #### Feedback
 
 * Stores player feedback and sentiment analysis results.
 
-### Relationships Summary
+### Relationships
 
-User → UserStats (1:1)
-
-User → Game (1:N as PlayerOne / PlayerTwo / Winner)
-
-User → Friendship (1:N sent / received)
-
-User → Message (1:N sent / received)
-
-User → Notification (1:N)
-
-User → WordCollectionItem (1:N)
-
-User → TournamentEntry (1:N)
-
-User → DailyMatchAttempt (1:N)
-
-User → WordStakeLock (1:N)
-
-User → Feedback (1:N)
-
-GameSession → Word (1:1 secret word)
-
-GameSession → SuggestionHistory (1:N)
-
-GameSession → Feedback (1:N)
-
-Tournament → TournamentEntry (1:N)
-
-Word → WordCollectionItem (1:N)
-
-Word → SuggestionHistory (1:N)
+* A **User** can participate in multiple **Games** as Player One, Player Two, or Winner.
+* A **User** has one **UserStats** record.
+* A **User** can own multiple **WordCollectionItems**.
+* A **WordCollectionItem** belongs to one **User** and one **Word**.
+* A **GameSession** references one secret **Word**.
+* A **GameSession** contains multiple **SuggestionHistory** records.
+* A **SuggestionHistory** record references a single **Word**.
+* A **User** can submit multiple **Feedback** entries linked to game sessions.
+* A **Tournament** contains multiple **TournamentEntries**.
+* A **TournamentEntry** links one **User** to one **Tournament**.
+* A **User** can receive multiple **Notifications**.
+* A **Friendship** creates a relationship between two **Users**.
+* A **User** can have multiple **DailyMatchAttempt** records.
+* A **User** can create multiple **WordStakeLock** records for Duel matchmaking.
+* A **User** can send and receive multiple **Messages**.
 
 ---
 
@@ -715,27 +708,105 @@ Word → SuggestionHistory (1:N)
 
 ### Major Modules (2 pts each)
 
-**User Management**
-- Standard user management and authentication.
+1. **Use a framework for both the frontend and backend** (2 pts)
+   - Frontend: React 18 with TypeScript, Vite, React Router, Zustand
+   - Backend: NestJS 10 with TypeScript, Prisma ORM
+   - Team member(s): apiochau, cossadon
 
-**Data and Analytics**
-- Advanced analytics dashboard with data visualization.
+2. **Real-time features using WebSockets** (2 pts)
+   - Socket.IO for live multiplayer matches, matchmaking, and real-time game state synchronization
+   - Team member(s): apiochau
 
-**Cybersecurity**
-- Implement WAF/ModSecurity (hardened) + HashiCorp Vault for secrets.
+3. **User interaction system (chat, profile, friends)** (2 pts)
+   - Chat: send/receive messages between users (ChatWidget, global and private messaging)
+   - Profile: view user information, avatar, display name, statistics
+   - Friends: add/remove friends, see friends list and online status
+   - Team member(s): cossadon
+
+4. **Public API with secured access** (2 pts)
+   - RESTful API with JWT authentication, rate limiting, and 5+ endpoints (GET, POST, PATCH, DELETE)
+   - Team member(s): apiochau, qizhang
+
+5. **Standard user management and authentication** (2 pts)
+   - Profile update, avatar upload with default, friend system with online status, user profile page
+   - Team member(s): luxu, cossadon
+
+6. **WAF/ModSecurity + HashiCorp Vault for secrets** (2 pts)
+   - OWASP ModSecurity Core Rule Set embedded in Nginx reverse proxy
+   - HashiCorp Vault (v1.13.3) for runtime secrets injection (database credentials, JWT, OAuth keys)
+   - Team member(s): Qizhang
+
+7. **Complete web-based game** (2 pts)
+   - Semantic word-guessing game inspired by Cemantix with solo and multiplayer modes
+   - Clear rules, win/loss conditions, real-time gameplay
+   - Team member(s): apiochau
+
+8. **Remote players** (2 pts)
+   - Two players on separate computers play in real-time via Socket.IO
+   - Handles disconnections with reconnection logic
+   - Team member(s): apiochau
 
 ### Minor Modules (1 pt each)
 
-**User Management**
-- Game statistics and match history
-- Implement a complete 2FA (Two-Factor Authentication) system for the users.
+1. **Use a frontend framework** (1 pt)
+   - React 18 with TypeScript
 
-**Artificial Intelligence**
-- Sentiment analysis for user-generated content.
+2. **Use a backend framework** (1 pt)
+   - NestJS 10 with TypeScript
+
+3. **Game statistics and match history** (1 pt)
+   - Track wins, losses, ranking; display match history and leaderboard
+   - Team member(s): apiochau, luxu
+
+4. **Remote authentication with OAuth 2.0** (1 pt)
+   - OAuth 2.0 integration with Google, GitHub, and 42
+   - Team member(s): apiochau
+
+5. **Two-Factor Authentication (2FA)** (1 pt)
+   - TOTP-based 2FA via compatible apps (Google Authenticator, etc.)
+   - Team member(s): luxu
+
+6. **User activity analytics and insights dashboard** (1 pt)
+   - Analytics module with game activity visualization, performance indicators
+   - Team member(s): cwang
+
+7. **Sentiment analysis for user-generated content** (1 pt)
+   - Automatic sentiment analysis on player feedback
+   - Team member(s): cwang
+
+### Point Calculation
+
+| Type  | Count | Points per module | Subtotal |
+|-------|-------|-------------------|----------|
+| Major | 8     | 2                 | 16       |
+| Minor | 7     | 1                 | 7        |
+| **Total** |   |                   | **23**   |
 
 ### Implementation Notes
-- (Justification for each module choice, How each module was implemented, Which team member(s) worked on each module.)
--
+
+Lexmon is a real-time multiplayer semantic word game. The module selection was driven by the nature of the game, the chosen tech stack, and the need for a secure, interactive, and data-aware web application.
+
+**Frameworks (Major + Minor):** React and NestJS were chosen as the foundation. React provides component-based UI development suited for a dynamic game interface with multiple views (solo, matchmaking, live game, collection, leaderboard). NestJS offers a modular backend architecture that naturally maps to the project's domain modules (auth, game, matchmaking, collection, etc.). Both use TypeScript, ensuring type safety across the full stack.
+
+**Real-time WebSockets (Major):** A multiplayer word game requires instant state synchronization between two players. Socket.IO was chosen for its built-in room management, reconnection handling, and fallback to HTTP polling, which directly supports the live match, matchmaking queue, and friend online status features.
+
+**User interaction — chat, profile, friends (Major):** The project requirements mandate user-to-user interaction. A semantic word game benefits from social features: players can chat during or between matches, view each other's profiles , online status and collection stats, and manage a friends list for quick rematches.
+
+**Public API (Major):** The backend exposes a RESTful API consumed by the React frontend. JWT-based authentication secures all endpoints. The API covers authentication, user management, game sessions, matchmaking, collections, statistics, and analytics — well beyond the minimum 5 endpoints.
+
+**Standard user management (Major):** Players need persistent accounts to track their word collection, statistics, and ranking. Avatar upload, display name customization, and profile pages give each player a visible identity on the leaderboard and in multiplayer matches.
+
+**WAF/ModSecurity + Vault (Major):** As the application handles user credentials, game state, and OAuth tokens, security is critical. ModSecurity provides runtime protection against common web attacks (SQLi, XSS). HashiCorp Vault ensures that no sensitive credentials (database passwords, JWT secrets, OAuth keys) are stored in plain text — they are injected into container memory at boot time.
+
+**Complete web-based game + Remote players (Major):** These two modules form the core of the project. The semantic word-guessing game (inspired by Cemantix) uses local word embeddings for similarity scoring, with clear win/loss conditions and multiple game modes (Solo, Training, Daily, Duel). Remote play over Socket.IO allows two players on separate machines to compete in real-time, with reconnection logic to handle network interruptions.
+
+**Game statistics and match history (Minor):** A competitive word game naturally produces data worth tracking. Wins, losses, ranking, and match history feed into the leaderboard and player profile, reinforcing the competitive loop.
+
+**OAuth 2.0 (Minor):** As a 42 school project, supporting 42 OAuth login is a natural fit. Google and GitHub OAuth were added to broaden access and demonstrate multi-provider integration.
+
+**2FA (Minor):** TOTP-based two-factor authentication adds an extra layer of account security, particularly relevant given that the application stores player collections with in-game value.
+
+**Analytics dashboard + Sentiment analysis (Minor):** These modules leverage the game data already produced by the application. The analytics dashboard visualizes game activity trends, rarity distributions, and performance metrics. Sentiment analysis on player feedback provides insight into user satisfaction and helps identify areas for improvement.
 
 ---
 
