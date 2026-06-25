@@ -766,9 +766,9 @@ Word → SuggestionHistory (1:N)
   - Implemented matchmaking system and API routing
 
 - **cwang**
-- Designed and implemented the Analytics Dashboard.
-- Developed backend analytics APIs and data aggregation logic for player engagement, completion rates, and gameplay statistics.
-- Implemented an AI-powered feedback analysis system using sentiment classification to automatically categorize player feedback.
+  - Designed and implemented the Analytics Dashboard.
+  - Developed backend analytics APIs and data aggregation logic for player engagement, completion rates, and gameplay statistics.
+  - Implemented an AI-powered feedback analysis system using sentiment classification to automatically categorize player feedback.
 
 - **Member 4**
   - Built frontend UI and game interface
