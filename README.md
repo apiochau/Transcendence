@@ -720,16 +720,20 @@ Word → SuggestionHistory (1:N)
 
 ## Features List
 
-- User authentication and account management.
-- OAuth 2.0 and Two-Factor Authentication (2FA).
-- Semantic word-guessing gameplay.
-- Solo and real-time multiplayer game modes.
-- Training, Daily, and Duel matchmaking modes.
-- Word collection and reward system.
-- Collection-based leaderboard.
-- Friend and notification systems.
-- Tournament management.
-- Analytics and feedback tracking.
+
+| Feature                                       | Team Member(s) | Description                                                                                              |
+| --------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| User Authentication and Account Management    | ⚠️, luxu | Provides user registration, login, profile management, and account security features.                    |
+| OAuth 2.0 and Two-Factor Authentication (2FA) | ⚠️, luxu | Supports secure authentication through OAuth 2.0 providers and TOTP-based two-factor authentication.     |
+| Semantic Word-Guessing Gameplay               | ⚠️       | Implements the core gameplay mechanic where players guess target words based on semantic similarity.     |
+| Solo and Real-Time Multiplayer Game Modes     | ⚠️       | Allows players to play individually or compete against others in real time.                              |
+| Training, Daily, and Duel Matchmaking Modes   | ⚠️       | Provides multiple gameplay modes, including practice sessions, daily challenges, and player matchmaking. |
+| Word Collection and Reward System             | luxu           | Enables players to collect discovered words and earn rewards based on gameplay achievements.             |
+| Collection-Based Leaderboard                  | luxu           | Ranks players according to the value and rarity of their collected words.                                |
+| Friend and Notification Systems               | luxu           | Allows users to add friends, track online status, and receive notifications.                             |
+| Tournament Management                         | ⚠️       | Supports tournament creation, participation, and result tracking.                                        |
+| Analytics Dashboard and Feedback Tracking     | cwang          | Visualizes gameplay statistics and automatically analyzes player feedback to generate insights.          |
+
 
 ---
 
@@ -866,6 +870,8 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
   - Linked Vault secrets to the Prisma database engine safely on boot.
   - Configured Nginx to encrypt web traffic and handle secure handshakes.
   - Set up firewall rules to automatically drop SQL injection and XSS exploits
+
+During development, the team encountered several technical and coordination challenges. Integrating multiple frontend and backend components required careful API design and consistent data models to ensure compatibility between modules. These challenges were addressed through regular team communication, code reviews, and iterative testing, which helped identify issues early and maintain smooth collaboration throughout the project.
 
 ## Current State
 
