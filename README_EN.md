@@ -474,15 +474,25 @@ Docker volumes:
 * https://react.dev/learn
 * https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html
 * https://docs.nestjs.com/
-* https://www.prisma.io/docs
-* .....
+* https://tailwindcss.com/docs
+* https://huggingface.co/docs/transformers.js
 
+#### Backend
+* https://docs.nestjs.com/
+* https://www.prisma.io/docs
+* https://socket.io/docs/v4/
+* https://jwt.io/introduction
+
+* ⚠️(....)
 
 ### AI Usage
 
 Artificial intelligence tools were used during the development process for:
 
-* .....
+* Documentation & Writing Improved clarity and structure of this README Helped rephrase and refine technical explanations Assisted with translation (e.g., French ↔ English)
+* Debugging Support Provided guidance when investigating bugs Suggested possible causes and debugging strategies Helped analyze unexpected behaviors in the code
+* Conceptual Understanding: Used AI tools to clarify technical concepts, architecture decisions, and implementation approaches during development.
+* ⚠️(....)
 
 ## Team & Project Report
 
@@ -496,23 +506,23 @@ Artificial intelligence tools were used during the development process for:
 - **apiochau — Product Owner (PO) / Developer**
   - Defined project scope and core game mechanics
   - Supervised feature priorities and delivery
-  - ⚠️Implement features and modules
+  - ⚠️Implemented features and modules
 
 - **cossadon — Tech Lead / Developer**
   - Designed system architecture (NestJS, WebSocket, database structure)
   - Reviewed pull requests and ensured code quality
   - Made key technical decisions (Prisma, Socket.IO, embeddings system)
-  - ⚠️Implement features and modules
+  - ⚠️Implemented features and modules
 
 - **cwang — Project Manager (PM) / Developer**
-  - Organizes team meetings and planning sessions.
-  - Tracks progress and deadlines.
-  - Implement data analytics module and feedback sentiment analysis
+  - Organized team meetings and planning sessions.
+  - Tracked progress and deadlines.
+  - Implemented data analytics module and feedback sentiment analysis
 
 - **luxu — Developer**
-  - Implement standard user management (registration, authentication, profile management)
-  - Develop game statistics and match history tracking system
-  - Implement Two-Factor Authentication (2FA) system
+  - Implemented standard user management (registration, authentication, profile management)
+  - Developed game statistics and match history tracking system
+  - Implemented Two-Factor Authentication (2FA) system
 
 - **qizhang — Developer (Security Engineer)**
   - Managed HashiCorp Vault to keep database passwords safe in memory.
@@ -715,6 +725,8 @@ Word → SuggestionHistory (1:N)
 
 ### Major Modules (2 pts each)
 
+⚠️(to be added)
+
 **User Management**
 - Standard user management and authentication.
 
@@ -725,6 +737,8 @@ Word → SuggestionHistory (1:N)
 - Implement WAF/ModSecurity (hardened) + HashiCorp Vault for secrets.
 
 ### Minor Modules (1 pt each)
+
+⚠️(to be added)
 
 **User Management**
 - Game statistics and match history
@@ -741,7 +755,7 @@ Word → SuggestionHistory (1:N)
 
 ## Individual Contributions
 
-> ⚠️ Replace names with your actual team members
+> ⚠️ Replace names with actual team members
 
 - **Member 1**
   - Implemented authentication system and JWT logic
@@ -751,15 +765,16 @@ Word → SuggestionHistory (1:N)
   - Managed project organization and backend integration
   - Implemented matchmaking system and API routing
 
-- **Member 3**
-  - Designed system architecture and database schema
-  - Implemented WebSocket real-time engine
+- **cwang**
+- Designed and implemented the Analytics Dashboard.
+- Developed backend analytics APIs and data aggregation logic for player engagement, completion rates, and gameplay statistics.
+- Implemented an AI-powered feedback analysis system using sentiment classification to automatically categorize player feedback.
 
 - **Member 4**
   - Built frontend UI and game interface
   - Integrated backend APIs and state management
 
-- **Qizhang**
+- **qizhang**
   - Linked Vault secrets to the Prisma database engine safely on boot.
   - Configured Nginx to encrypt web traffic and handle secure handshakes.
   - Set up firewall rules to automatically drop SQL injection and XSS exploits
