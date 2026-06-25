@@ -3,7 +3,7 @@ interface AnalyticsOverview {
   totalGamesStarted: number;
   totalGamesEngaged: number;
   totalGamesCompleted: number;
-  totalTournaments: number;
+  //totalTournaments: number;
 }
 
 interface Props {
@@ -76,14 +76,14 @@ export function AnalyticsOverviewCards({
           </p>
         </div>
 
-        <div className="card-surface p-6">
+        {/* <div className="card-surface p-6">
           <h3 className="text-sm text-slate-500">
             Tournaments
           </h3>
           <p className="mt-2 text-4xl font-bold">
             {overview.totalTournaments}
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
