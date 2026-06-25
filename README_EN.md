@@ -483,9 +483,14 @@ Docker volumes:
 * https://react.dev/learn
 * https://www.typescriptlang.org/docs/handbook/typescript-from-scratch.html
 * https://docs.nestjs.com/
-* https://www.prisma.io/docs
-* .....
+* https://tailwindcss.com/docs
+* https://huggingface.co/docs/transformers.js
 
+#### Backend
+* https://docs.nestjs.com/
+* https://www.prisma.io/docs
+* https://socket.io/docs/v4/
+* https://jwt.io/introduction
 
 ### AI Usage
 
@@ -495,7 +500,7 @@ Artificial intelligence tools were used during the development process for:
 * Analyzing module selection and evaluating the compatibility and coherence of chosen modules.
 * Debugging deployment issues.
 * Understanding and explaining unfamiliar technologies.
-* Drafting documentation and README mark down review.
+* Drafting documentation and README content.
 * Reviewing code logic and identifying root causes of runtime errors.
 
 All AI-generated suggestions were reviewed, tested, and adapted by team members before integration. AI was not used to generate application source code directly.
@@ -513,7 +518,7 @@ All AI-generated suggestions were reviewed, tested, and adapted by team members 
 - **Member 1 — Product Owner (PO) / Backend Developer**
   - Defined project scope and core game mechanics
   - Supervised feature priorities and delivery
-  - Contributed to backend architecture and API design
+  - ⚠️Implement features and modules
 
 - **Member 2 — Project Manager (PM) / Full Stack Developer**
   - Organized tasks and sprint planning
@@ -524,13 +529,19 @@ All AI-generated suggestions were reviewed, tested, and adapted by team members 
   - Designed system architecture (NestJS, WebSocket, database structure)
   - Reviewed pull requests and ensured code quality
   - Made key technical decisions (Prisma, Socket.IO, embeddings system)
+  - ⚠️Implement features and modules
 
-- **Member 4 — Frontend Developer**
-  - Built React UI components and game interface
-  - Implemented game pages, routing, and state management
-  - Integrated API calls and real-time updates
+- **cwang — Project Manager (PM) / Developer**
+  - Organizes team meetings and planning sessions.
+  - Tracks progress and deadlines.
+  - Implement data analytics module and feedback sentiment analysis
 
-- **Qizhang — Security Engineer**
+- **luxu — Developer**
+  - Implement standard user management (registration, authentication, profile management)
+  - Develop game statistics and match history tracking system
+  - Implement Two-Factor Authentication (2FA) system
+
+- **qizhang — Developer (Security Engineer)**
   - Managed HashiCorp Vault to keep database passwords safe in memory.
   - Set up ModSecurity WAF and Nginx to block malicious web attacks.
   - Enabled HTTPS encryption (TLS 1.2/1.3) and secure browser headers.
@@ -741,11 +752,6 @@ The database is designed around player management, semantic word games, collecti
    - Clear rules, win/loss conditions, real-time gameplay
    - Team member(s): apiochau
 
-8. **Remote players** (2 pts)
-   - Two players on separate computers play in real-time via Socket.IO
-   - Handles disconnections with reconnection logic
-   - Team member(s): apiochau
-
 ### Minor Modules (1 pt each)
 
 1. **Use a frontend framework** (1 pt)
@@ -778,9 +784,9 @@ The database is designed around player management, semantic word games, collecti
 
 | Type  | Count | Points per module | Subtotal |
 |-------|-------|-------------------|----------|
-| Major | 8     | 2                 | 16       |
+| Major | 7     | 2                 | 14       |
 | Minor | 7     | 1                 | 7        |
-| **Total** |   |                   | **23**   |
+| **Total** |   |                   | **21**   |
 
 ### Implementation Notes
 
@@ -798,7 +804,7 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 **WAF/ModSecurity + Vault (Major):** As the application handles user credentials, game state, and OAuth tokens, security is critical. ModSecurity provides runtime protection against common web attacks (SQLi, XSS). HashiCorp Vault ensures that no sensitive credentials (database passwords, JWT secrets, OAuth keys) are stored in plain text — they are injected into container memory at boot time.
 
-**Complete web-based game + Remote players (Major):** These two modules form the core of the project. The semantic word-guessing game (inspired by Cemantix) uses local word embeddings for similarity scoring, with clear win/loss conditions and multiple game modes (Solo, Training, Daily, Duel). Remote play over Socket.IO allows two players on separate machines to compete in real-time, with reconnection logic to handle network interruptions.
+**Complete web-based game (Major):** The semantic word-guessing game (inspired by Cemantix) uses local word embeddings for similarity scoring, with clear win/loss conditions and multiple game modes (Solo, Training, Daily, Duel).
 
 **Game statistics and match history (Minor):** A competitive word game naturally produces data worth tracking. Wins, losses, ranking, and match history feed into the leaderboard and player profile, reinforcing the competitive loop.
 
@@ -812,7 +818,7 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 ## Individual Contributions
 
-> ⚠️ Replace names with your actual team members
+> ⚠️ Replace names with actual team members
 
 - **Member 1**
   - Implemented authentication system and JWT logic
@@ -822,15 +828,19 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
   - Managed project organization and backend integration
   - Implemented matchmaking system and API routing
 
-- **Member 3**
-  - Designed system architecture and database schema
-  - Implemented WebSocket real-time engine
+- **cwang**
+  - Designed and implemented the Analytics Dashboard.
+  - Developed backend analytics APIs and data aggregation logic for player engagement, completion rates, and gameplay statistics.
+  - Implemented an AI-powered feedback analysis system using sentiment classification to automatically categorize player feedback.
 
-- **Member 4**
-  - Built frontend UI and game interface
-  - Integrated backend APIs and state management
+- **luxu**
+  - Build the profile page with display name editing, statistics display, and collection value calculation.
+  - Developed avatar upload and management system with file type validation, size limiting, and default avatar fallback.
+  - Implemented online status tracking for user profiles and friends list.
+  - Implemented TOTP-based Two-Factor Authentication (2FA): secret generation, QR code provisioning, enable/disable flow, and login verification with temporary token mechanism.
+  - Created Privacy Policy and Terms of Service pages.
 
-- **Qizhang**
+- **qizhang**
   - Linked Vault secrets to the Prisma database engine safely on boot.
   - Configured Nginx to encrypt web traffic and handle secure handshakes.
   - Set up firewall rules to automatically drop SQL injection and XSS exploits

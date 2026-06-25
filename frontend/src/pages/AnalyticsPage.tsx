@@ -57,12 +57,6 @@ export function AnalyticsPage()
       .slice(0, 10);
     const [startDate, setStartDate] = useState<string>(defaultStartDate);
     const [endDate, setEndDate] = useState<string>(defaultEndDate);
-        //Load Overview
-    // useEffect(() => 
-    //   {
-    //     apiClient.get<AnalyticsOverview>('/analytics/overview')
-    //     .then((response) => setOverview(response.data));
-    //   }, []);
     
     //Load Game over time(last 7 days)
     {/* fetch API */}
@@ -116,7 +110,7 @@ export function AnalyticsPage()
     return (
       <section className="page-enter">
         <h1 className="text-3xl font-bold">
-          Analytics Dashboard
+          Analytics Dashboard of Partie solo
         </h1>
 
         {/* Overview Section */}

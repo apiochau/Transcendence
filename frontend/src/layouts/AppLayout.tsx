@@ -10,12 +10,12 @@ const navItems = [
   { to: '/matchmaking', label: 'Matchmaking' },
   { to: '/solo', label: 'Partie solo' },
   //{ to: '/profile', label: 'Profile' },
-  { to: '/analytics', label: 'Analytics' },
   { to: '/collection', label: 'Collection' },
   { to: '/leaderboard', label: 'Classement' },
   { to: '/rules', label: 'Regles' },
   { to: '/tournaments', label: 'Tournois' },
   { to: '/friends', label: 'Friends' },
+  { to: '/analytics', label: 'Analytics' },
 ];
 
 
