@@ -515,21 +515,16 @@ All AI-generated suggestions were reviewed, tested, and adapted by team members 
 
 > ⚠️ Replace names below with actual team members
 
-- **Member 1 — Product Owner (PO) / Backend Developer**
+- **apiochau — Product Owner (PO) / Developer**
   - Defined project scope and core game mechanics
   - Supervised feature priorities and delivery
-  - ⚠️Implement features and modules
+  - ⚠️Implemented features and modules
 
-- **Member 2 — Project Manager (PM) / Full Stack Developer**
-  - Organized tasks and sprint planning
-  - Managed GitHub Issues and project milestones
-  - Worked on both frontend integration and backend coordination
-
-- **Member 3 — Tech Lead**
+- **cossadon — Tech Lead / Developer**
   - Designed system architecture (NestJS, WebSocket, database structure)
   - Reviewed pull requests and ensured code quality
   - Made key technical decisions (Prisma, Socket.IO, embeddings system)
-  - ⚠️Implement features and modules
+  - ⚠️Implemented features and modules
 
 - **cwang — Project Manager (PM) / Developer**
   - Organizes team meetings and planning sessions.
@@ -552,7 +547,9 @@ All AI-generated suggestions were reviewed, tested, and adapted by team members 
 
 ### Work Organization
 
-The team followed a modular development approach.
+To efficiently manage the complexity of the project, the team adopted a modular development strategy. Tasks were distributed according to each member's strengths and interests. While individual modules were developed independently, regular synchronization meetings were held to discuss progress, resolve blockers, and coordinate integration efforts.
+
+Version control workflows and pull-request reviews were used to maintain code quality and ensure consistency across the project. This organization allowed multiple features to be developed in parallel while minimizing merge conflicts and integration issues.
 
 ### Tools Used
 
@@ -643,6 +640,7 @@ The database is designed around player management, semantic word games, collecti
 #### UserStats
 
 * Stores player statistics such as games played, wins, losses, and rating.
+* Each User has exactly one UserStats record.
 
 #### Friendship
 
@@ -656,6 +654,9 @@ The database is designed around player management, semantic word games, collecti
 
 * Supports private and global messaging between users.
 
+   ##### * sender → User
+   ##### * recipient → User (optional for global messages)
+
 #### Tournament
 
 * Stores tournament information and status.
@@ -663,6 +664,7 @@ The database is designed around player management, semantic word games, collecti
 #### TournamentEntry
 
 * Associates players with tournaments.
+   ##### * Many-to-many relationship (User ↔ Tournament)
 
 #### DailyMatchAttempt
 
@@ -670,33 +672,49 @@ The database is designed around player management, semantic word games, collecti
 
 #### WordStakeLock
 
-* Locks collection words used as stakes in Duel matchmaking.
+* Handles duel matchmaking staking system. Tracks locked words, room binding, status (QUEUED / SETTLED), timestamps
 
 #### SuggestionHistory
 
-* Stores suggestion clicks, similarity scores, and player actions during game sessions.
+* Stores word suggestions, similarity scores, player actions and timestamps.
 
 #### Feedback
 
 * Stores player feedback and sentiment analysis results.
 
-### Relationships
+### Relationships Summary
 
-* A **User** can participate in multiple **Games** as Player One, Player Two, or Winner.
-* A **User** has one **UserStats** record.
-* A **User** can own multiple **WordCollectionItems**.
-* A **WordCollectionItem** belongs to one **User** and one **Word**.
-* A **GameSession** references one secret **Word**.
-* A **GameSession** contains multiple **SuggestionHistory** records.
-* A **SuggestionHistory** record references a single **Word**.
-* A **User** can submit multiple **Feedback** entries linked to game sessions.
-* A **Tournament** contains multiple **TournamentEntries**.
-* A **TournamentEntry** links one **User** to one **Tournament**.
-* A **User** can receive multiple **Notifications**.
-* A **Friendship** creates a relationship between two **Users**.
-* A **User** can have multiple **DailyMatchAttempt** records.
-* A **User** can create multiple **WordStakeLock** records for Duel matchmaking.
-* A **User** can send and receive multiple **Messages**.
+User → UserStats (1:1)
+
+User → Game (1:N as PlayerOne / PlayerTwo / Winner)
+
+User → Friendship (1:N sent / received)
+
+User → Message (1:N sent / received)
+
+User → Notification (1:N)
+
+User → WordCollectionItem (1:N)
+
+User → TournamentEntry (1:N)
+
+User → DailyMatchAttempt (1:N)
+
+User → WordStakeLock (1:N)
+
+User → Feedback (1:N)
+
+GameSession → Word (1:1 secret word)
+
+GameSession → SuggestionHistory (1:N)
+
+GameSession → Feedback (1:N)
+
+Tournament → TournamentEntry (1:N)
+
+Word → WordCollectionItem (1:N)
+
+Word → SuggestionHistory (1:N)
 
 ---
 
@@ -745,12 +763,17 @@ The database is designed around player management, semantic word games, collecti
 6. **WAF/ModSecurity + HashiCorp Vault for secrets** (2 pts)
    - OWASP ModSecurity Core Rule Set embedded in Nginx reverse proxy
    - HashiCorp Vault (v1.13.3) for runtime secrets injection (database credentials, JWT, OAuth keys)
-   - Team member(s): Qizhang
+   - Team member(s): qizhang
 
 7. **Complete web-based game** (2 pts)
    - Semantic word-guessing game inspired by Cemantix with solo and multiplayer modes
    - Clear rules, win/loss conditions, real-time gameplay
    - Team member(s): apiochau
+
+8. **Advanced analytics dashboard with data visualization.** (2 pt)
+   - Analytics module with game activity visualization, performance indicators
+   - Interactive charts and graphs, real-time data updates, export functionality, customizable date ranges and filters
+   - Team member(s): cwang
 
 ### Minor Modules (1 pt each)
 
@@ -772,11 +795,7 @@ The database is designed around player management, semantic word games, collecti
    - TOTP-based 2FA via compatible apps (Google Authenticator, etc.)
    - Team member(s): luxu
 
-6. **User activity analytics and insights dashboard** (1 pt)
-   - Analytics module with game activity visualization, performance indicators
-   - Team member(s): cwang
-
-7. **Sentiment analysis for user-generated content** (1 pt)
+6. **Sentiment analysis for user-generated content** (1 pt)
    - Automatic sentiment analysis on player feedback
    - Team member(s): cwang
 
@@ -784,9 +803,9 @@ The database is designed around player management, semantic word games, collecti
 
 | Type  | Count | Points per module | Subtotal |
 |-------|-------|-------------------|----------|
-| Major | 7     | 2                 | 14       |
-| Minor | 7     | 1                 | 7        |
-| **Total** |   |                   | **21**   |
+| Major | 8     | 2                 | 16       |
+| Minor | 6     | 1                 | 6        |
+| **Total** |   |                   | **22**   |
 
 ### Implementation Notes
 
@@ -806,13 +825,16 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 **Complete web-based game (Major):** The semantic word-guessing game (inspired by Cemantix) uses local word embeddings for similarity scoring, with clear win/loss conditions and multiple game modes (Solo, Training, Daily, Duel).
 
+**Analytics dashboard (Major):** This module leverages the game data produced by the application to visualize game activity trends, rarity distributions, and performance metrics. It provides administrators and developers with actionable insights into player behavior and overall system performance.
+
 **Game statistics and match history (Minor):** A competitive word game naturally produces data worth tracking. Wins, losses, ranking, and match history feed into the leaderboard and player profile, reinforcing the competitive loop.
 
 **OAuth 2.0 (Minor):** As a 42 school project, supporting 42 OAuth login is a natural fit. Google and GitHub OAuth were added to broaden access and demonstrate multi-provider integration.
 
 **2FA (Minor):** TOTP-based two-factor authentication adds an extra layer of account security, particularly relevant given that the application stores player collections with in-game value.
 
-**Analytics dashboard + Sentiment analysis (Minor):** These modules leverage the game data already produced by the application. The analytics dashboard visualizes game activity trends, rarity distributions, and performance metrics. Sentiment analysis on player feedback provides insight into user satisfaction and helps identify areas for improvement.
+
+**Sentiment analysis (Minor):** This module automatically analyzes player feedback to assess user satisfaction and identify areas for improvement. By examining sentiment trends in user comments and reviews, it helps support data-driven decisions for enhancing the gaming experience.
 
 ---
 
@@ -820,11 +842,11 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 > ⚠️ Replace names with actual team members
 
-- **Member 1**
+- ⚠️**Member 1**
   - Implemented authentication system and JWT logic
   - Designed user schema and security flow
 
-- **Member 2**
+- ⚠️**Member 2**
   - Managed project organization and backend integration
   - Implemented matchmaking system and API routing
 
