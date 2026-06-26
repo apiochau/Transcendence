@@ -75,14 +75,14 @@ docker compose up --build
 Puis ouvrir:
 
 ```text
-http://localhost:8080
+https://localhost
 ```
 
 Les services exposes par Compose:
 
-- Frontend public via Nginx: `http://localhost:8080`
-- API backend proxifiee: `http://localhost:8080/api`
-- WebSocket proxifie: `http://localhost:8080/socket.io`
+- Frontend public via Nginx: `https://localhost`
+- API backend proxifiee: `https://localhost/api`
+- WebSocket proxifie: `https://localhost/socket.io`
 - Backend interne Docker: `backend:3000`
 - Frontend interne Docker: `frontend:80`
 - PostgreSQL interne Docker: `postgres:5432`
@@ -121,9 +121,9 @@ PORT=3000
 DATABASE_URL=postgresql://lexmon:lexmon@postgres:5432/lexmon?schema=public
 JWT_SECRET=change-me-in-production
 JWT_EXPIRES_IN=1d
-CORS_ORIGIN=http://localhost:8080
-FRONTEND_URL=http://localhost:8080
-OAUTH_CALLBACK_BASE_URL=http://localhost:8080/api
+CORS_ORIGIN=https://localhost
+FRONTEND_URL=https://localhost
+OAUTH_CALLBACK_BASE_URL=https://localhost/api
 OAUTH_GOOGLE_CLIENT_ID=
 OAUTH_GOOGLE_CLIENT_SECRET=
 OAUTH_GITHUB_CLIENT_ID=
@@ -152,9 +152,9 @@ Les providers OAuth restent invisibles dans l'interface tant que leur `CLIENT_ID
 URLs de callback a declarer dans les consoles provider en local Docker:
 
 ```text
-Google: http://localhost:8080/api/auth/oauth/google/callback
-GitHub: http://localhost:8080/api/auth/oauth/github/callback
-42: http://localhost:8080/api/auth/oauth/42/callback
+Google: https://localhost/api/auth/oauth/google/callback
+GitHub: https://localhost/api/auth/oauth/github/callback
+42: https://localhost/api/auth/oauth/42/callback
 ```
 
 Apres validation par le provider, le backend cree ou lie le compte Lexmon par email, genere un JWT Lexmon, puis redirige vers `/oauth/callback` cote frontend.
@@ -165,7 +165,7 @@ Fichier: `frontend/.env.example`
 
 ```env
 VITE_API_URL=/api
-VITE_SOCKET_URL=http://localhost:8080
+VITE_SOCKET_URL=https://localhost
 ```
 
 En Docker, Nginx proxy `/api` et `/socket.io` vers le backend.

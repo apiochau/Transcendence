@@ -52,6 +52,7 @@ interface PlayerState {
   currentWordIds: string[];
   clickedSuggestions: MultiplayerHistoryItem[];
   finalAttemptCount: number;
+  nextSuggestionsAt: number | null;
   disconnectForfeitTimer: NodeJS.Timeout | null;
   playedThisRound: boolean;
 }
@@ -308,6 +309,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       currentWordIds: [],
       clickedSuggestions: [],
       finalAttemptCount: 0,
+      nextSuggestionsAt: null,
       disconnectForfeitTimer: null,
     };
     room.playerStates.set(userId, playerState);
@@ -498,6 +500,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     playerState.clickedSuggestions.push(historyItem);
     playerState.currentWordIds = [];
     playerState.playedThisRound = true;
+    playerState.nextSuggestionsAt = Date.now() + 2500;
       
     const allPlayed = Array.from(room.players).every(
       (id) => room.playerStates.get(id)?.playedThisRound === true,
@@ -513,6 +516,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         if (ps) {
           ps.playedThisRound = false;
           ps.skipCountThisRound = 0;
+          ps.nextSuggestionsAt = null;
         }
       }
       this.server.to(roomId).emit('game:round-complete', {});
@@ -615,7 +619,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       finished: room.finished,
       suggestions: currentSuggestions,
       history: playerState.clickedSuggestions,
-      cooldownMs: 0,
+      cooldownMs: playerState.nextSuggestionsAt ? Math.max(0, playerState.nextSuggestionsAt - Date.now()) : 0,
       opponentState: this.buildOpponentState(roomId, room, userId),
     });
   }

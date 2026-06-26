@@ -233,7 +233,7 @@ To enforce high-level security perimeter controls, **no sensitive secrets (datab
 
 ***Security Notice:** To seed the system safely, you must create a local `.env` file at the root level of the project (which is strictly `gitignored`) to pass your production credentials into the Vault injection script during provisioning, ensuring zero hardcoded secrets exist within the repository.*
 
-```.env_example
+```.env.example
 # database postgres
 POSTGRES_USER=lexmon
 POSTGRES_PASSWORD=lexmon
@@ -252,9 +252,9 @@ OAUTH_42_CLIENT_SECRET="your-42-secret"
 
 ```
 
-#### Backend Environment Variables (`backend/.env`)
+#### Backend Environment Variables (`backend/.env.example`)
 
-Create a `.env` file inside `backend/` using these exact non-sensitive configurations:
+Use `backend/.env.example` as the committed non-sensitive example configuration:
 
 ```env
 # Only non-sensitive routing and framework parameters allowed
@@ -268,9 +268,9 @@ VAULT_ADDR=http://localhost:8200
 DB_HOST=localhost
 ```
 
-#### Frontend Environment Variables (`frontend/.env`)
+#### Frontend Environment Variables (`frontend/.env.example`)
 
-Create a `.env` file inside `frontend/`:
+Use `frontend/.env.example` as the committed non-sensitive example configuration:
 
 ```env
 VITE_API_URL=/api
@@ -285,7 +285,8 @@ Register the following callback URLs:
 - GitHub: `https://localhost/api/auth/oauth/github/callback`
 - 42: `https://localhost/api/auth/oauth/42/callback`
 
-*OAuth providers remain hidden until valid credentials are configured.*
+OAuth providers are displayed in the login/register UI. They remain disabled until valid
+credentials are configured in the root `.env` file and injected into Vault at startup.
 
 #### Secure Dynamic Credentials (Managed inside Vault via `vault/init.sh`)
 During orchestration, your initialization routine automatically seeds HashiCorp Vault's in-memory storage. The system generates, injects, and completely manages these keys inside isolated RAM:
@@ -293,7 +294,7 @@ During orchestration, your initialization routine automatically seeds HashiCorp 
 * `JWT_SECRET`
 * `OAUTH_(GOOGLE/GITHUB/42)_CLIENT_ID` & `OAUTH_(GOOGLE/GITHUB/42)_CLIENT_SECRET`
 
-<!-- as the provided .env_example -->
+<!-- as the provided .env.example -->
 
 ---
 
@@ -303,7 +304,7 @@ During orchestration, your initialization routine automatically seeds HashiCorp 
 The project includes an ANSI-colored GNU Makefile and initialization utilities to completely automate dependencies and security provisioning securely.
 
 #### 1. Full Core Installation & Build
-To install local dependencies inside your sub-repositories, automatically issue hardened local SSL certificates with correct Linux access masks (`644`), pull secrets configurations into Vault memory, and boot the entire network bridge, run:
+To install local dependencies inside your sub-repositories, pull secrets configurations into Vault memory, and boot the entire network bridge, run:
 ```bash
 make
 ```
@@ -513,28 +514,26 @@ All AI-generated suggestions were reviewed, tested, and adapted by team members 
 
 ### Roles and Responsibilities
 
-> ⚠️ Replace names below with actual team members
-
 - **apiochau — Product Owner (PO) / Developer**
-  - Defined project scope and core game mechanics
-  - Supervised feature priorities and delivery
-  - ⚠️Implemented features and modules
+  - Designed the core concept and gameplay mechanics of Lexmon, including the collection, rarity, matchmaking, and PvP systems.
+  - Defined the overall project architecture and supervised the technical direction to ensure scalability and maintainability.
+  - Implemented the core backend features, including authentication (JWT + OAuth), game session architecture, and the semantic word engine that powers the gameplay.
 
 - **cossadon — Tech Lead / Developer**
   - Designed system architecture (NestJS, WebSocket, database structure)
   - Reviewed pull requests and ensured code quality
   - Made key technical decisions (Prisma, Socket.IO, embeddings system)
-  - ⚠️Implemented features and modules
+  - Implemented backend integration features and supported real-time module design
 
 - **cwang — Project Manager (PM) / Developer**
-  - Organizes team meetings and planning sessions.
-  - Tracks progress and deadlines.
-  - Implement data analytics module and feedback sentiment analysis
+  - Organized team meetings and planning sessions.
+  - Tracked progress and deadlines.
+  - Implemented the data analytics module and feedback sentiment analysis
 
 - **luxu — Developer**
-  - Implement standard user management (registration, authentication, profile management)
-  - Develop game statistics and match history tracking system
-  - Implement Two-Factor Authentication (2FA) system
+  - Implemented standard user management (registration, authentication, profile management)
+  - Developed game statistics and match history tracking system
+  - Implemented Two-Factor Authentication (2FA) system
 
 - **qizhang — Developer (Security Engineer)**
   - Managed HashiCorp Vault to keep database passwords safe in memory.
@@ -723,15 +722,15 @@ Word → SuggestionHistory (1:N)
 
 | Feature                                       | Team Member(s) | Description                                                                                              |
 | --------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
-| User Authentication and Account Management    | ⚠️, luxu | Provides user registration, login, profile management, and account security features.                    |
-| OAuth 2.0 and Two-Factor Authentication (2FA) | ⚠️, luxu | Supports secure authentication through OAuth 2.0 providers and TOTP-based two-factor authentication.     |
-| Semantic Word-Guessing Gameplay               | ⚠️       | Implements the core gameplay mechanic where players guess target words based on semantic similarity.     |
-| Solo and Real-Time Multiplayer Game Modes     | ⚠️       | Allows players to play individually or compete against others in real time.                              |
-| Training, Daily, and Duel Matchmaking Modes   | ⚠️       | Provides multiple gameplay modes, including practice sessions, daily challenges, and player matchmaking. |
+| User Authentication and Account Management    | apiochau, luxu | Provides user registration, login, profile management, and account security features.               |
+| OAuth 2.0 and Two-Factor Authentication (2FA) | apiochau, luxu | Supports secure authentication through OAuth 2.0 providers and TOTP-based two-factor authentication. |
+| Semantic Word-Guessing Gameplay               | apiochau       | Implements the core gameplay mechanic where players guess target words based on semantic similarity. |
+| Solo and Real-Time Multiplayer Game Modes     | apiochau       | Allows players to play individually or compete against others in real time.                         |
+| Training, Daily, and Duel Matchmaking Modes   | apiochau       | Provides multiple gameplay modes, including practice sessions, daily challenges, and player matchmaking. |
 | Word Collection and Reward System             | luxu           | Enables players to collect discovered words and earn rewards based on gameplay achievements.             |
 | Collection-Based Leaderboard                  | luxu           | Ranks players according to the value and rarity of their collected words.                                |
 | Friend and Notification Systems               | luxu           | Allows users to add friends, track online status, and receive notifications.                             |
-| Tournament Management                         | ⚠️       | Supports tournament creation, participation, and result tracking.                                        |
+| Tournament Management                         | apiochau       | Supports tournament creation and player registration.                                                    |
 | Analytics Dashboard and Feedback Tracking     | cwang          | Visualizes gameplay statistics and automatically analyzes player feedback to generate insights.          |
 
 
@@ -756,60 +755,52 @@ Word → SuggestionHistory (1:N)
    - Friends: add/remove friends, see friends list and online status
    - Team member(s): cossadon
 
-4. **Public API with secured access** (2 pts)
-   - RESTful API with JWT authentication, rate limiting, and 5+ endpoints (GET, POST, PATCH, DELETE)
-   - Team member(s): apiochau, qizhang
-
-5. **Standard user management and authentication** (2 pts)
+4. **Standard user management and authentication** (2 pts)
    - Profile update, avatar upload with default, friend system with online status, user profile page
    - Team member(s): luxu, cossadon
 
-6. **WAF/ModSecurity + HashiCorp Vault for secrets** (2 pts)
+5. **WAF/ModSecurity + HashiCorp Vault for secrets** (2 pts)
    - OWASP ModSecurity Core Rule Set embedded in Nginx reverse proxy
    - HashiCorp Vault (v1.13.3) for runtime secrets injection (database credentials, JWT, OAuth keys)
    - Team member(s): qizhang
 
-7. **Complete web-based game** (2 pts)
+6. **Complete web-based game** (2 pts)
    - Semantic word-guessing game inspired by Cemantix with solo and multiplayer modes
    - Clear rules, win/loss conditions, real-time gameplay
    - Team member(s): apiochau
 
-8. **Advanced analytics dashboard with data visualization.** (2 pt)
-   - Analytics module with game activity visualization, performance indicators
-   - Interactive charts and graphs, real-time data updates, export functionality, customizable date ranges and filters
-   - Team member(s): cwang
-
 ### Minor Modules (1 pt each)
 
-1. **Use a frontend framework** (1 pt)
-   - React 18 with TypeScript
+1. **Use an ORM for the database** (1 pt)
+   - Prisma ORM is used for schema definition, relations, and type-safe database access.
 
-2. **Use a backend framework** (1 pt)
-   - NestJS 10 with TypeScript
-
-3. **Game statistics and match history** (1 pt)
+2. **Game statistics and match history** (1 pt)
    - Track wins, losses, ranking; display match history and leaderboard
    - Team member(s): apiochau, luxu
 
-4. **Remote authentication with OAuth 2.0** (1 pt)
+3. **Remote authentication with OAuth 2.0** (1 pt)
    - OAuth 2.0 integration with Google, GitHub, and 42
    - Team member(s): apiochau
 
-5. **Two-Factor Authentication (2FA)** (1 pt)
+4. **Two-Factor Authentication (2FA)** (1 pt)
    - TOTP-based 2FA via compatible apps (Google Authenticator, etc.)
    - Team member(s): luxu
 
-6. **Sentiment analysis for user-generated content** (1 pt)
+5. **Sentiment analysis for user-generated content** (1 pt)
    - Automatic sentiment analysis on player feedback
+   - Team member(s): cwang
+
+6. **Advanced analytics dashboard with data visualization** (1 pt)
+   - Gameplay overview cards, charts, date filters, and CSV export for the games-over-time chart.
    - Team member(s): cwang
 
 ### Point Calculation
 
 | Type  | Count | Points per module | Subtotal |
 |-------|-------|-------------------|----------|
-| Major | 8     | 2                 | 16       |
+| Major | 6     | 2                 | 12       |
 | Minor | 6     | 1                 | 6        |
-| **Total** |   |                   | **22**   |
+| **Total** |   |                   | **18**   |
 
 ### Implementation Notes
 
@@ -821,15 +812,13 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 **User interaction — chat, profile, friends (Major):** The project requirements mandate user-to-user interaction. A semantic word game benefits from social features: players can chat during or between matches, view each other's profiles , online status and collection stats, and manage a friends list for quick rematches.
 
-**Public API (Major):** The backend exposes a RESTful API consumed by the React frontend. JWT-based authentication secures all endpoints. The API covers authentication, user management, game sessions, matchmaking, collections, statistics, and analytics — well beyond the minimum 5 endpoints.
-
 **Standard user management (Major):** Players need persistent accounts to track their word collection, statistics, and ranking. Avatar upload, display name customization, and profile pages give each player a visible identity on the leaderboard and in multiplayer matches.
 
 **WAF/ModSecurity + Vault (Major):** As the application handles user credentials, game state, and OAuth tokens, security is critical. ModSecurity provides runtime protection against common web attacks (SQLi, XSS). HashiCorp Vault ensures that no sensitive credentials (database passwords, JWT secrets, OAuth keys) are stored in plain text — they are injected into container memory at boot time.
 
 **Complete web-based game (Major):** The semantic word-guessing game (inspired by Cemantix) uses local word embeddings for similarity scoring, with clear win/loss conditions and multiple game modes (Solo, Training, Daily, Duel).
 
-**Analytics dashboard (Major):** This module leverages the game data produced by the application to visualize game activity trends, rarity distributions, and performance metrics. It provides administrators and developers with actionable insights into player behavior and overall system performance.
+**Prisma ORM (Minor):** Prisma defines the PostgreSQL schema, relations, and generated client used by the backend modules.
 
 **Game statistics and match history (Minor):** A competitive word game naturally produces data worth tracking. Wins, losses, ranking, and match history feed into the leaderboard and player profile, reinforcing the competitive loop.
 
@@ -840,19 +829,21 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 **Sentiment analysis (Minor):** This module automatically analyzes player feedback to assess user satisfaction and identify areas for improvement. By examining sentiment trends in user comments and reviews, it helps support data-driven decisions for enhancing the gaming experience.
 
+**Analytics dashboard (Minor):** The analytics page visualizes game activity, similarity distribution, collection rarity distribution, win speed, and feedback sentiment. It includes date filters and CSV export for the games-over-time chart.
+
 ---
 
 ## Individual Contributions
 
-> ⚠️ Replace names with actual team members
+- **apiochau**
+  - Designed and implemented the semantic word-guessing gameplay.
+  - Implemented authentication flow, OAuth integration, matchmaking, and live game routing.
+  - Built collection rewards, daily mode, duel mode, and core backend game logic.
 
-- ⚠️**Member 1**
-  - Implemented authentication system and JWT logic
-  - Designed user schema and security flow
-
-- ⚠️**Member 2**
-  - Managed project organization and backend integration
-  - Implemented matchmaking system and API routing
+- **cossadon**
+  - Designed the NestJS and Socket.IO backend architecture.
+  - Implemented and reviewed backend modules for users, WebSocket flows, and Prisma relations.
+  - Helped integrate real-time multiplayer behavior with frontend game pages.
 
 - **cwang**
   - Designed and implemented the Analytics Dashboard.
