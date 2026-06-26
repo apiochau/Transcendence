@@ -770,9 +770,9 @@ Word → SuggestionHistory (1:N)
    - Team member(s): apiochau
 
 7. **Advanced analytics dashboard with data visualization.** (2 pt)
-  - Analytics module with game activity visualization, performance indicators
-  - Interactive charts and graphs, real-time data updates, export functionality, customizable date ranges and filters
-  - Team member(s): cwang
+    - Analytics module with game activity visualization, performance indicators
+    - Interactive charts and graphs, real-time data updates, export functionality, customizable date ranges and filters
+    - Team member(s): cwang
 
 ### Minor Modules (1 pt each)
 
