@@ -769,10 +769,16 @@ Word → SuggestionHistory (1:N)
    - Clear rules, win/loss conditions, real-time gameplay
    - Team member(s): apiochau
 
+7. **Advanced analytics dashboard with data visualization.** (2 pt)
+  - Analytics module with game activity visualization, performance indicators
+  - Interactive charts and graphs, real-time data updates, export functionality, customizable date ranges and filters
+  - Team member(s): cwang
+
 ### Minor Modules (1 pt each)
 
 1. **Use an ORM for the database** (1 pt)
    - Prisma ORM is used for schema definition, relations, and type-safe database access.
+   - Team member(s): ⚠️
 
 2. **Game statistics and match history** (1 pt)
    - Track wins, losses, ranking; display match history and leaderboard
@@ -790,17 +796,14 @@ Word → SuggestionHistory (1:N)
    - Automatic sentiment analysis on player feedback
    - Team member(s): cwang
 
-6. **Advanced analytics dashboard with data visualization** (1 pt)
-   - Gameplay overview cards, charts, date filters, and CSV export for the games-over-time chart.
-   - Team member(s): cwang
 
 ### Point Calculation
 
 | Type  | Count | Points per module | Subtotal |
 |-------|-------|-------------------|----------|
-| Major | 6     | 2                 | 12       |
-| Minor | 6     | 1                 | 6        |
-| **Total** |   |                   | **18**   |
+| Major | 7     | 2                 | 14       |
+| Minor | 5     | 1                 | 5        |
+| **Total** |   |                   | **19**   |
 
 ### Implementation Notes
 
