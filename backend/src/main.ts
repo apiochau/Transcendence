@@ -8,8 +8,8 @@ import vault from 'node-vault';
 import { execSync } from 'child_process';
 
 async function loadVaultSecrets() {
-  const vaultAddr = process.env.VAULT_ADDR || 'http://vault:8200';
-  const vaultToken = process.env.VAULT_TOKEN || 'lexmon_root_token';
+  const vaultAddr = process.env.VAULT_ADDR;
+  const vaultToken = process.env.VAULT_TOKEN;
   const dbHost = process.env.DB_HOST || 'lexmon-postgres';
 
   const vaultClient = vault({
