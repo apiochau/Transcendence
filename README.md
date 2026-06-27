@@ -322,7 +322,7 @@ make
 #### 3. Accessing the Application
 Once the cluster logs report that all services are online:
 
-* Open your browser and navigate to: `https://localhost`
+* Open your browser and navigate to: `https://localhost:8443`
 
 * Note on Self-Signed Certs: Click Advanced → Proceed/Accept Risk to bypass the development certificate warning.
 
