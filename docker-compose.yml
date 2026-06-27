@@ -103,7 +103,7 @@ services:
     container_name: lexmon-nginx
     restart: unless-stopped
     ports:
-      - "443:8443"
+      - "8443:8443"
     environment:
       - PARANOIA=2
       - SERVER_NAME=localhost
