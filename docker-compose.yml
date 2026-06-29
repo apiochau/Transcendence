@@ -1,6 +1,8 @@
 services:
   vault:
-    image: hashicorp/vault:1.13.3
+    # Fully qualified names also work with Docker-compatible Podman setups,
+    # which otherwise stop to ask which registry should be used.
+    image: docker.io/hashicorp/vault:1.13.3
     container_name: vault
     ports:
       - "8200:8200"
@@ -13,7 +15,7 @@ services:
       - lexmon
 
   vault-init:
-    image: hashicorp/vault:1.13.3
+    image: docker.io/hashicorp/vault:1.13.3
     container_name: vault-init
     depends_on:
       vault:
@@ -70,11 +72,9 @@ services:
       VAULT_TOKEN: ${VAULT_TOKEN:-change-in-production}
       DB_HOST: 'lexmon-postgres'
       DATABASE_URL: "postgresql://placeholder:placeholder@lexmon-postgres:5432/placeholder?schema=public"
-      CORS_ORIGIN: 'https://localhost'
-      FRONTEND_URL: 'https://localhost'
-      OAUTH_CALLBACK_BASE_URL: 'https://localhost/api'
-    entrypoint: []
-    command: node dist/main.js
+      CORS_ORIGIN: 'https://localhost:8443'
+      FRONTEND_URL: 'https://localhost:8443'
+      OAUTH_CALLBACK_BASE_URL: 'https://localhost:8443/api'
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,7 +100,7 @@ services:
       - lexmon
 
   nginx:
-    image: owasp/modsecurity-crs:nginx
+    image: docker.io/owasp/modsecurity-crs:nginx
     container_name: lexmon-nginx
     restart: unless-stopped
     ports:

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -31,8 +31,11 @@ export class UsersService {
   findByOAuth(provider: string, oauthId: string) {
     return this.prisma.user.findFirst({
       where: {
-        oauthProvider: provider,
-        oauthId,
+        OR: [
+          { oauthAccounts: { some: { provider, providerUserId: oauthId } } },
+          // Compatibility with accounts created before OAuthAccount existed.
+          { oauthProvider: provider, oauthId },
+        ],
       },
     });
   }
@@ -43,14 +46,29 @@ export class UsersService {
     });
   }
 
-  linkOAuthAccount(id: string, provider: string, oauthId: string, data: Pick<Prisma.UserUpdateInput, 'avatarUrl' | 'displayName'> = {}) {
-    return this.prisma.user.update({
-      where: { id },
-      data: {
-        ...data,
-        oauthProvider: provider,
-        oauthId,
-      },
+  async linkOAuthAccount(id: string, provider: string, oauthId: string, data: Pick<Prisma.UserUpdateInput, 'avatarUrl' | 'displayName'> = {}) {
+    return this.prisma.$transaction(async (prisma) => {
+      const existingAccount = await prisma.oAuthAccount.findUnique({
+        where: { provider_providerUserId: { provider, providerUserId: oauthId } },
+      });
+      if (existingAccount && existingAccount.userId !== id) {
+        throw new ConflictException('OAuth account is already linked to another user');
+      }
+      if (!existingAccount) {
+        await prisma.oAuthAccount.create({
+          data: { provider, providerUserId: oauthId, userId: id },
+        });
+      }
+
+      return prisma.user.update({
+        where: { id },
+        data: {
+          ...data,
+          // Keep these legacy fields populated for existing installations.
+          oauthProvider: provider,
+          oauthId,
+        },
+      });
     });
   }
 

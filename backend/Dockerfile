@@ -34,4 +34,6 @@ COPY data ./data
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "until npx prisma db push; do echo 'waiting for postgres or prisma engine'; sleep 2; done; node dist/main.js"]
+# main.ts loads the database credentials from Vault before synchronizing Prisma.
+# Running Prisma here would use the placeholder DATABASE_URL from Compose.
+CMD ["node", "dist/main.js"]

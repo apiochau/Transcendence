@@ -43,6 +43,7 @@ model User {
   avatarUrl         String?
   oauthProvider     String?
   oauthId           String?
+  oauthAccounts     OAuthAccount[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   sentFriends       Friendship[]      @relation("FriendRequester")
@@ -62,6 +63,19 @@ model User {
   feedbacks         Feedback[]
   twoFactorEnabled  Boolean           @default(false)
   twoFactorSecret   String?
+}
+
+model OAuthAccount {
+  id             String   @id @default(uuid())
+  provider       String
+  providerUserId String
+  userId         String
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@unique([userId, provider])
+  @@index([userId])
 }
 
 model Friendship {

@@ -8,7 +8,7 @@ GREEN     = \033[0;32m
 RED       = \033[0;31m
 NC        = \033[0m
 
-all: install start
+all: start
 
 # install local dependencies
 install:
@@ -27,7 +27,7 @@ ssl_prep:
 
 #launch clusters in detached mode (in the background)
 start:
-	$(COMPOSE) up -d
+	$(COMPOSE) up -d --build
 	@echo "$(GREEN)=========================================================================$(NC)"; \
 	echo "$(GREEN)  Cluster is online! Run 'make logs' to view structural runtime streams  $(NC)"; \
 	echo "$(GREEN)=========================================================================$(NC)"; \
@@ -64,9 +64,10 @@ help:
 	echo "            TRANSCENDENCE SERVICE MANAGEMENT ORCHESTRATOR                "; \
 	echo "========================================================================="; \
 	echo "Available Rules:"
-	@echo "  make         - Trigger 'make start' (Auto-gen SSL and launch cluster)"
+	@echo "  make         - Build and launch the cluster"
+	@echo "  make install - Install dependencies locally (optional for Docker)"
 	@echo "  make build   - Force re-compilation of all microservice Dockerfiles"
-	@echo "  make start   - Auto-verify SSL dependencies and launch cluster in detached mode"
+	@echo "  make start   - Build and launch the cluster in detached mode"
 	@echo "  make stop    - Gracefully halt containers without stripping runtime layers"
 	@echo "  make down    - Strip network bridges and containers safely (Volumetric Safe)"
 	@echo "  make logs    - Enter live tail stream aggregation interface for all microservices"

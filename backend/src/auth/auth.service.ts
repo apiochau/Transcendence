@@ -88,7 +88,8 @@ export class AuthService {
 
     const existingOAuthUser = await this.usersService.findByOAuth(profile.provider, profile.providerUserId);
     if (existingOAuthUser) {
-      return this.buildAuthResponse(existingOAuthUser);
+      const linkedUser = await this.usersService.linkOAuthAccount(existingOAuthUser.id, profile.provider, profile.providerUserId);
+      return this.buildAuthResponse(linkedUser);
     }
 
     const existingEmailUser = await this.usersService.findByEmail(profile.email);
@@ -108,6 +109,12 @@ export class AuthService {
       avatarUrl: profile.avatarUrl,
       oauthProvider: profile.provider,
       oauthId: profile.providerUserId,
+      oauthAccounts: {
+        create: {
+          provider: profile.provider,
+          providerUserId: profile.providerUserId,
+        },
+      },
       passwordHash: await bcrypt.hash(randomUUID(), 12),
     });
 

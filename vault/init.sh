@@ -1,13 +1,15 @@
 #!/bin/sh
 
 echo "Waiting for Vault to start"
-while ! vault status > dev/null 2>&1; do
+while ! vault status > /dev/null 2>&1; do
     sleep 1
 done
 echo "Vault is up and running"
 echo "Configuring KV Secrets engine(v2)..."
 
-vault secret enable --version=2 kv || true
+if ! vault secrets list -format=json | grep -q '"secret/"'; then
+    vault secrets enable -path=secret -version=2 kv
+fi
 
 #inject secrets
 

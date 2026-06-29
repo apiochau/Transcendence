@@ -12,6 +12,12 @@ export interface OAuthProviderConfig {
   scopes: string[];
 }
 
+export interface OAuthAuthorizationRequest {
+  url: string;
+  state: string;
+  maxAgeMs: number;
+}
+
 export interface RemoteOAuthProfile {
   provider: OAuthProviderId;
   providerUserId: string;

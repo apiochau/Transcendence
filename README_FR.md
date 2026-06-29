@@ -75,14 +75,14 @@ docker compose up --build
 Puis ouvrir:
 
 ```text
-https://localhost
+https://localhost:8443
 ```
 
 Les services exposes par Compose:
 
-- Frontend public via Nginx: `https://localhost`
-- API backend proxifiee: `https://localhost/api`
-- WebSocket proxifie: `https://localhost/socket.io`
+- Frontend public via Nginx: `https://localhost:8443`
+- API backend proxifiee: `https://localhost:8443/api`
+- WebSocket proxifie: `https://localhost:8443/socket.io`
 - Backend interne Docker: `backend:3000`
 - Frontend interne Docker: `frontend:80`
 - PostgreSQL interne Docker: `postgres:5432`
@@ -121,9 +121,9 @@ PORT=3000
 DATABASE_URL=postgresql://lexmon:lexmon@postgres:5432/lexmon?schema=public
 JWT_SECRET=change-me-in-production
 JWT_EXPIRES_IN=1d
-CORS_ORIGIN=https://localhost
-FRONTEND_URL=https://localhost
-OAUTH_CALLBACK_BASE_URL=https://localhost/api
+CORS_ORIGIN=https://localhost:8443
+FRONTEND_URL=https://localhost:8443
+OAUTH_CALLBACK_BASE_URL=https://localhost:8443/api
 OAUTH_GOOGLE_CLIENT_ID=
 OAUTH_GOOGLE_CLIENT_SECRET=
 OAUTH_GITHUB_CLIENT_ID=
@@ -147,17 +147,27 @@ Variables importantes:
 
 ### OAuth 2.0
 
-Les providers OAuth restent invisibles dans l'interface tant que leur `CLIENT_ID` et leur `CLIENT_SECRET` ne sont pas renseignes.
+Les boutons OAuth restent desactives tant que leur `CLIENT_ID` et leur `CLIENT_SECRET` ne sont pas renseignes dans le fichier `.env` a la racine.
 
 URLs de callback a declarer dans les consoles provider en local Docker:
 
 ```text
-Google: https://localhost/api/auth/oauth/google/callback
-GitHub: https://localhost/api/auth/oauth/github/callback
-42: https://localhost/api/auth/oauth/42/callback
+Google: https://localhost:8443/api/auth/oauth/google/callback
+GitHub: https://localhost:8443/api/auth/oauth/github/callback
+42: https://localhost:8443/api/auth/oauth/42/callback
 ```
 
 Apres validation par le provider, le backend cree ou lie le compte Lexmon par email, genere un JWT Lexmon, puis redirige vers `/oauth/callback` cote frontend.
+
+Configuration locale:
+
+1. Copier `.env.example` vers `.env` a la racine du projet.
+2. Google Cloud: creer un client OAuth de type **Application Web**, ajouter l'URI Google ci-dessus dans **URI de redirection autorises**, puis copier le Client ID et le Client secret.
+3. GitHub: dans **Settings > Developer settings > OAuth Apps**, creer une OAuth App avec `https://localhost:8443` comme Homepage URL et l'URI GitHub ci-dessus comme Authorization callback URL.
+4. 42: creer une application OAuth v2, utiliser `https://localhost:8443` comme site et l'URI 42 ci-dessus comme Redirect URI, avec le scope `public`.
+5. Renseigner les six variables `OAUTH_*` dans le `.env` racine, puis relancer la stack avec `make down && make` pour reinjecter les valeurs dans Vault.
+
+Les secrets OAuth restent uniquement cote backend/Vault. Ne jamais les ajouter dans une variable `VITE_*` ni les committer.
 
 ### Frontend
 
@@ -165,7 +175,7 @@ Fichier: `frontend/.env.example`
 
 ```env
 VITE_API_URL=/api
-VITE_SOCKET_URL=https://localhost
+VITE_SOCKET_URL=https://localhost:8443
 ```
 
 En Docker, Nginx proxy `/api` et `/socket.io` vers le backend.

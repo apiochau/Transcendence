@@ -243,12 +243,12 @@ POSTGRES_DB=lexmon
 JWT_SECRET=change-me-in-production
 
 # OAuth
-OAUTH_GOOGLE_CLIENT_ID="your-google-id"
-OAUTH_GOOGLE_CLIENT_SECRET="your-google-secret"
-OAUTH_GITHUB_CLIENT_ID="your-github-id"
-OAUTH_GITHUB_CLIENT_SECRET="your-github-secret"
-OAUTH_42_CLIENT_ID="your-42-id"
-OAUTH_42_CLIENT_SECRET="your-42-secret"
+OAUTH_GOOGLE_CLIENT_ID=
+OAUTH_GOOGLE_CLIENT_SECRET=
+OAUTH_GITHUB_CLIENT_ID=
+OAUTH_GITHUB_CLIENT_SECRET=
+OAUTH_42_CLIENT_ID=
+OAUTH_42_CLIENT_SECRET=
 
 ```
 
@@ -261,9 +261,9 @@ Use `backend/.env.example` as the committed non-sensitive example configuration:
 NODE_ENV=production
 PORT=3000
 JWT_EXPIRES_IN=1d
-CORS_ORIGIN=https://localhost
-FRONTEND_URL=https://localhost
-OAUTH_CALLBACK_BASE_URL=https://localhost/api
+CORS_ORIGIN=https://localhost:8443
+FRONTEND_URL=https://localhost:8443
+OAUTH_CALLBACK_BASE_URL=https://localhost:8443/api
 VAULT_ADDR=http://localhost:8200
 DB_HOST=localhost
 ```
@@ -274,16 +274,16 @@ Use `frontend/.env.example` as the committed non-sensitive example configuration
 
 ```env
 VITE_API_URL=/api
-VITE_SOCKET_URL=https://localhost
+VITE_SOCKET_URL=https://localhost:8443
 ```
 
 #### OAuth Setup
 
 Register the following callback URLs:
 
-- Google: `https://localhost/api/auth/oauth/google/callback`
-- GitHub: `https://localhost/api/auth/oauth/github/callback`
-- 42: `https://localhost/api/auth/oauth/42/callback`
+- Google: `https://localhost:8443/api/auth/oauth/google/callback`
+- GitHub: `https://localhost:8443/api/auth/oauth/github/callback`
+- 42: `https://localhost:8443/api/auth/oauth/42/callback`
 
 OAuth providers are displayed in the login/register UI. They remain disabled until valid
 credentials are configured in the root `.env` file and injected into Vault at startup.
@@ -778,7 +778,7 @@ Word → SuggestionHistory (1:N)
 
 1. **Use an ORM for the database** (1 pt)
    - Prisma ORM is used for schema definition, relations, and type-safe database access.
-   - Team member(s): ⚠️
+   - Team member(s): cossadon
 
 2. **Game statistics and match history** (1 pt)
    - Track wins, losses, ranking; display match history and leaderboard
