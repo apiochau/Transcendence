@@ -100,7 +100,8 @@ services:
       - lexmon
 
   nginx:
-    image: docker.io/owasp/modsecurity-crs:nginx
+    build:
+      context: ./nginx
     container_name: lexmon-nginx
     restart: unless-stopped
     ports:
@@ -109,8 +110,6 @@ services:
       - PARANOIA=2
       - SERVER_NAME=localhost
       - SSL_PORT=8443
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/templates/conf.d/default.conf.template:ro
     depends_on:
       - frontend
       - backend
