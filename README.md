@@ -809,7 +809,7 @@ Word → SuggestionHistory (1:N)
 
 Lexmon is a real-time multiplayer semantic word game. The module selection was driven by the nature of the game, the chosen tech stack, and the need for a secure, interactive, and data-aware web application.
 
-**Frameworks (Major + Minor):** React and NestJS were chosen as the foundation. React provides component-based UI development suited for a dynamic game interface with multiple views (solo, matchmaking, live game, collection, leaderboard). NestJS offers a modular backend architecture that naturally maps to the project's domain modules (auth, game, matchmaking, collection, etc.). Both use TypeScript, ensuring type safety across the full stack.
+**Frameworks (Major):** React and NestJS were chosen as the foundation. React provides component-based UI development suited for a dynamic game interface with multiple views (solo, matchmaking, live game, collection, leaderboard). NestJS offers a modular backend architecture that naturally maps to the project's domain modules (auth, game, matchmaking, collection, etc.). Both use TypeScript, ensuring type safety across the full stack.
 
 **Real-time WebSockets (Major):** A multiplayer word game requires instant state synchronization between two players. Socket.IO was chosen for its built-in room management, reconnection handling, and fallback to HTTP polling, which directly supports the live match, matchmaking queue, and friend online status features.
 
@@ -821,6 +821,8 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 **Complete web-based game (Major):** The semantic word-guessing game (inspired by Cemantix) uses local word embeddings for similarity scoring, with clear win/loss conditions and multiple game modes (Solo, Training, Daily, Duel).
 
+**Analytics dashboard (Major):** The analytics page visualizes game activity, similarity distribution, collection rarity distribution, win speed, and feedback sentiment. It includes date filters and CSV export for the games-over-time chart.
+
 **Prisma ORM (Minor):** Prisma defines the PostgreSQL schema, relations, and generated client used by the backend modules.
 
 **Game statistics and match history (Minor):** A competitive word game naturally produces data worth tracking. Wins, losses, ranking, and match history feed into the leaderboard and player profile, reinforcing the competitive loop.
@@ -829,10 +831,7 @@ Lexmon is a real-time multiplayer semantic word game. The module selection was d
 
 **2FA (Minor):** TOTP-based two-factor authentication adds an extra layer of account security, particularly relevant given that the application stores player collections with in-game value.
 
-
 **Sentiment analysis (Minor):** This module automatically analyzes player feedback to assess user satisfaction and identify areas for improvement. By examining sentiment trends in user comments and reviews, it helps support data-driven decisions for enhancing the gaming experience.
-
-**Analytics dashboard (Minor):** The analytics page visualizes game activity, similarity distribution, collection rarity distribution, win speed, and feedback sentiment. It includes date filters and CSV export for the games-over-time chart.
 
 ---
 
